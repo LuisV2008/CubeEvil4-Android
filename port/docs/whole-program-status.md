@@ -952,6 +952,12 @@ Gegenständen / Gegnerbereichen (Selbsttest an r100, r20b), beschädigter Raum, 
 lose), `Rel/`-Modul, `etc/SizeTbl.dat`, Filmsequenz mit geändertem Bild, US-Discs. Nicht geprüft: Gerät,
 geöffnete Dokumentseite, Speicherkarten-Texte nach dem Umschalten (erst beim nächsten App-Start).
 
+## 1.1.7 (ab 27.11.2026, auf 1.1.6 = 01395be0)
+
+Version 1.1.7 (versionCode 131), weiter auf Branch `workthread-116` (Worktree `RE4-wt116`, WSL `~/re4-wt116`), Releasetext
+`port/android-decomp/docs/releases/v1.1.7.md`. 1.1.6 ist veröffentlicht (origin/master = Tag 1.1.6 = 01395be0); Release und Tag macht
+der Projektinhaber auf GitHub.
+
 ## 1.1.6 (ab 26.11.2026, auf 1.1.5 = 219acfda)
 
 Version 1.1.6 (versionCode 130), Branch `workthread-116` (Worktree `RE4-wt116`, WSL `~/re4-wt116`), Releasetext
