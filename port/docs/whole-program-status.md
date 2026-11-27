@@ -958,6 +958,37 @@ Version 1.1.7 (versionCode 131), weiter auf Branch `workthread-116` (Worktree `R
 `port/android-decomp/docs/releases/v1.1.7.md`. 1.1.6 ist veröffentlicht (origin/master = Tag 1.1.6 = 01395be0); Release und Tag macht
 der Projektinhaber auf GitHub.
 
+### 1. Absturz „Bewegen und Zielen“ nach Waffenwechsel (Nutzerberichte moto g53 5G und Poco F6, 1.1.6, arm64)
+
+- **Bild:** SIGSEGV in `HermiteInterpolation` (Adresse 0x3c8 / 0x4b8) aus `MotionMoveCore` aus `re4_move_aim_legs`
+  (`evalLayer`, die Gehschicht). Beim moto vorher: Pistole (wep03) mit Bewegen und Zielen gegangen, Scharfschützengewehr
+  (wep10) mit Zielfernrohr (dabei keine Beine), zurück zur Pistole, durch eine Tür, zielen und gehen: Absturz.
+- **Ursache:** Alle Waffendateien (`em/wepNN.drs`) laden an dieselbe Stelle (0x80904000). Ein Bewegungsdatensatz hat
+  Schlüssel-Offsets, die `MotionSetCore` beim ersten Abspielen an Ort und Stelle in Zeiger umrechnet. Nach dem Wechsel
+  zurück lag die Pistolendatei frisch von der Disc (rohe Offsets) an derselben Adresse; die Schicht verglich nur die
+  Adresse (`data != L.data`), richtete sich nicht neu ein und las einen Offset als Zeiger.
+- **Behebung** (`runtime/move_aim_legs.cpp`): `resetLayers` (Ende jedes Zielens) vergisst die Bewegung der Schichten;
+  `layerReady` prüft jedes Bild (auch beim Ausblenden), dass die Bewegung noch die der Tabelle des Spielers ist und ihre
+  Schlüsseltabelle umgerechnet ist (`keysReady`: dieselbe Prüfung wie das Spiel, Wort < 0), sonst neu einrichten; geht
+  das nicht, spielt die Schicht nicht (die Beine wie das Spiel sie hat). Logzeile „fresh from the disc (raw keys)“.
+- **Geprüft am PC** (r100, Debug-Disc, neuer Schalter `RE4_TEST_WEAPON_THEN="free+N:W"` für einen zweiten Waffenwechsel,
+  `RE4_TEST_MOVE_AIM` mit mehreren Fenstern „;“): Pistole gehen, Waffe 3, zurück zu 2, zielen und gehen: alter Stand
+  01395be0 SIGSEGV an 0x4b8 (wie der moto), neuer Stand ohne Absturz, Gehschicht neu eingerichtet. Skript `117-oldnew.sh`,
+  Matrix `117-matrix.sh` (Messer, Nachladen, Drehungen, alle Waffen, Ada/HUNK/Krauser/Wesker, Waffenwechsel beim Gehen).
+
+### 2. Absturz am Abspann-Film mit Schätzen auf der Minikarte (Nutzerbericht Poco F6, 1.1.6)
+
+- **Bild:** SIGSEGV in `sceAtGetOtAddr` an 0x92121212, aufgerufen aus `minimap.cpp` (`buildPickups`, Frame-Hook in
+  PADRead), gleich nach „movie/ending.sfd started“ in r333. Nicht Bewegen und Zielen (der Nutzer nannte es, sein früherer
+  Absturz um 07:34 war aber Punkt 1).
+- **Ursache:** Die Minikarte (1.1.6, „Schätze und Items“) ging alle 5 Bilder mit der Spielfunktion `sceAtGetOtAddr`
+  durch die Bereichsliste des Raums. Der Film legt seinen Speicher über die Raumdaten; ein Listenwort 0x12121212 führte
+  die Spielfunktion nach 0x92121212 (nicht gemappt).
+- **Behebung** (`runtime/minimap.cpp`): eigener Gang `nextArea`, der jedes Wort nur aus vorhandenem Speicher liest
+  (`live`, ausgerichtet), höchstens 4096 Schritte, Ende bei Müll. Neuer Kerntest „minimap walk“ (`tests/core_tests.cpp`:
+  zwei Einträge, dann 0x12121212 → zwei gefunden; Listenende, Tabellenwort, Schleife, schiefe Adresse).
+- Den Abspann selbst am PC nicht durchgespielt (r333-Ende); der Gang ist durch den Kerntest abgedeckt.
+
 ## 1.1.6 (ab 26.11.2026, auf 1.1.5 = 219acfda)
 
 Version 1.1.6 (versionCode 130), Branch `workthread-116` (Worktree `RE4-wt116`, WSL `~/re4-wt116`), Releasetext

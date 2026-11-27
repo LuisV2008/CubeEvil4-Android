@@ -59,6 +59,7 @@ extern "C" int re4_formats_entry_status(const void* entry);
 extern "C" int re4probe_card_test(void);
 extern "C" int re4probe_instant_game_test(void);
 extern "C" int re4probe_stack_items(void);  // tests/game_probe.cpp (1.1.0, patch 0254)
+extern "C" int re4_minimap_walk_count(void* start);  // runtime/minimap.cpp (1.1.7)
 
 namespace {
 
@@ -1339,6 +1340,34 @@ void testNativeAspect()
     report("native aspect", ok);
 }
 
+// (1.1.7, report Poco F6 27.11.2026) The minimap's pickups walk the room's area list from the frame hook: when the
+// room's data is gone (the ending movie's heap over it) a word of the list is garbage (0x12121212, the game's walk
+// went to 0x92121212: SIGSEGV in sceAtGetOtAddr). Two records, then such a word: two found, nothing read beyond.
+void testMinimapWalk()
+{
+    bool ok = true;
+    unsigned* base = (unsigned*) (unsigned long) 0x82200000u;
+    memset(base, 0, 0x400);
+    unsigned* head = base;
+    unsigned* a = base + 0x40;
+    unsigned* b = base + 0x80;
+    head[0] = 0x82200100u;  // -> a (top bit: a record)
+    a[0] = 0x82200200u;     // -> b
+    b[0] = 0x12121212u;     // garbage: the game's walk reads at 0x92121212
+    CHECK(re4_minimap_walk_count(head) == 2);
+    b[0] = 0xFFFFFFFFu;     // the list's end
+    CHECK(re4_minimap_walk_count(head) == 2);
+    head[0] = 0x02200100u;  // a table word (no top bit): a is a table entry, skipped, b the one record
+    CHECK(re4_minimap_walk_count(head) == 1);
+    head[0] = 0x82200100u;
+    a[0] = 0x82200100u;     // a record pointing to itself: the step limit ends it
+    CHECK(re4_minimap_walk_count(head) > 0 && re4_minimap_walk_count(head) < 4096);
+    a[0] = 0x82200101u;     // a word not on a record's boundary
+    CHECK(re4_minimap_walk_count(head) == 1);
+    memset(base, 0, 0x400);
+    report("minimap walk", ok);
+}
+
 }  // namespace
 
 int re4_core_tests()
@@ -1357,6 +1386,7 @@ int re4_core_tests()
     testOneLanguageMdt();
     testEffectTextureMotion();
     testMorph();
+    testMinimapWalk();
     {
         int failed = re4probe_ax_test();
         gFailures += failed;
