@@ -1926,6 +1926,9 @@ final class CoreMenu extends Dialog {
       graphics.edit().putBoolean("effectsOn", on).apply(); CoreBridge.sendSoundVolume(graphics);
     });
     help(R.string.ingame_volume_help);
+    MenuLayout.Buttons custom = buttonsRow(labelledOptions(R.string.ingame_custom_music));
+    toggle(custom, R.string.ingame_custom_music, graphics.getBoolean("customMusic", false),
+        on -> graphics.edit().putBoolean("customMusic", on).apply());
   }
   /** A percentage as the volumes' sliders: `min` .. `max` in steps of 5 from `now`, each move to `moved`. */
   private void percentSlider(MenuLayout.Buttons row, int label, int min, int max, int now, Changed<Integer> moved) {

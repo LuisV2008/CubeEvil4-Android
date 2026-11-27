@@ -478,6 +478,12 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
       coreSettings += ";RE4_SKIP_INTRO=1";
       Log.i(TAG, "skip intro: on (the game's logos before the title menu are left out)");
     }
+    // custom music (modification): files in <app folder>/music replace the disc's, from the next start
+    if (getSharedPreferences(GRAPHICS_PREFS, MODE_PRIVATE).getBoolean("customMusic", false)) {
+      File music = new File(AppStorage.base(this), "music");
+      music.mkdirs();
+      coreSettings += ";RE4_MUSIC_DIR=" + music.getAbsolutePath();
+    }
     // the app's own folder (on the shared storage, else internal), where test switches write (RE4_AUDIO_WAV)
     AppStorage.base(this);
     // Management -> "Delete All Data" (0.99.15, PlayerWipe): the memory card and the instant save go before the core

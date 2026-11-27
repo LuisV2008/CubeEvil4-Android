@@ -396,6 +396,53 @@ void applyPack(Disc& d, int no)
     }
 }
 
+// Custom music (modification, not part of CubeEvil4): with RE4_MUSIC_DIR set, a file
+// <dir>/<path on the disc> (same upper/lower case) is read instead of the disc's file.
+void applyMusic(Disc& d)
+{
+    const char* dir = getenv("RE4_MUSIC_DIR");
+    if (!dir || !dir[0]) {
+        return;
+    }
+    unsigned files = 0;
+    for (u32 e = 1; e < d.count; e++) {
+        if (isDir(d, e)) {
+            continue;
+        }
+        u32 chain[64];
+        int n = 0;
+        for (u32 i = e; i != 0 && n < 64; i = d.parent[i]) {
+            chain[n++] = i;
+        }
+        char host[2048];
+        size_t len = (size_t) snprintf(host, sizeof(host), "%s", dir);
+        while (n > 0 && len < sizeof(host)) {
+            len += (size_t) snprintf(host + len, sizeof(host) - len, "/%s", entryName(d, chain[--n]));
+        }
+        FILE* f = fopen(host, "rb");
+        if (!f) {
+            continue;
+        }
+        long size = fseek(f, 0, SEEK_END) == 0 ? ftell(f) : -1;
+        fclose(f);
+        if (size <= 0) {
+            continue;
+        }
+        if (!d.pack) {
+            d.pack = (char**) calloc(d.count, sizeof(char*));
+        }
+        free(d.pack[e]);
+        d.pack[e] = strdup(host);
+        unsigned char* p = d.fst + e * 12 + 8;
+        p[0] = (unsigned char) (size >> 24);
+        p[1] = (unsigned char) (size >> 16);
+        p[2] = (unsigned char) (size >> 8);
+        p[3] = (unsigned char) size;
+        files++;
+    }
+    re4_log("DVD: custom music %s: %u files replaced", dir, files);
+}
+
 void unloadDisc(Disc& d)
 {
     if (d.pack) {
@@ -454,6 +501,7 @@ bool loadDisc(int no)
     free(boot);
     d.korean = d.release == RE4_DISC_RETAIL_JP && koreanOf(d.root);
     applyPack(d, no);
+    applyMusic(d);
     d.loaded = true;
     re4_log("DVD: disc %d: %s, %u FST entries, %s%s", no, d.root, d.count, releaseName(d.release),
             d.korean ? " (Korean translation)" : "");
