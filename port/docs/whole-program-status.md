@@ -989,6 +989,36 @@ der Projektinhaber auf GitHub.
   zwei Einträge, dann 0x12121212 → zwei gefunden; Listenende, Tabellenwort, Schleife, schiefe Adresse).
 - Den Abspann selbst am PC nicht durchgespielt (r333-Ende); der Gang ist durch den Kerntest abgedeckt.
 
+### 3. Koffer und Händler stürzen im Schloss mit Ashley ab (Nutzerbericht Redmi 15, 1.1.6, ohne Fehlerprotokoll)
+
+- **Nicht nachgestellt.** Ein Untermenü (Koffer, Händler, Akten) lagert 3 MB Spielspeicher ab `pStFnt` (PC 0x80a87d20)
+  ins ARAM aus (`SubScreenOpen`, `STA_SUB_SCRN` vorher an, nach dem Zurücktauschen aus); die Raumdatei liegt oft darin
+  (moto-Bericht: r205.das ab 0x80ad70e0). Die Minikarte (Umriss seit 0.98.2, Schätze und Items seit 1.1.6) las im
+  Frame-Hook weiter den Raum, auch bei offenem Untermenü.
+- **Vorsorge** (`runtime/minimap.cpp`): bei `STA_SUB_SCRN` liest die Minikarte nichts (die letzten Listen bleiben),
+  die Schätze auch nicht während `STA_EVENT` (Ereignisse tauschen ebenfalls Speicher).
+- **Geprüft am PC** (i686, Skripte `117-subscr.sh`, `117-subscr-all.sh`): r200..r21b (26 Räume frei, r206/r215 ohne
+  freien Spieler im Debug-Start; Ashley in den Debug-Starts r203, r208, r210, r212, r219), Koffer und Händler offen, mit
+  Minikarten-Schätzen, Stapeln 999, Schnellfeuer, XL-Koffer, Kräutermischungen und Munition im Koffer: Debug-Disc und
+  EU-Discs ohne Absturz, auch vor der Vorsorge. Auf dem PC liegen die Gegenstandsbereiche (ITM, r205 0x80ee1a40) hinter
+  dem ausgelagerten Bereich.
+- **Nachtrag:** Der Nutzer hatte „Schätze und Items“ aus, ein Protokoll kommt nicht. Die Minikarten-Vorsorge bleibt
+  (richtig und harmlos), ist aber nicht die Ursache. Weitere PC-Läufe ohne Absturz: die Rüstungsräume (em2d: r205, r213)
+  mit Ashley (`RE4_TEST_STA=101`, 32 von 32 Läufen mit `em/pl11.drs`), Koffer und Händler, Minikarte aus und an, 32 und
+  64 bit (neuer PC-Kern x86_64), Debug- und EU-Discs; alle Schlossräume mit Ashley auf 64 bit, EU, Minikarte aus (26
+  frei). Skript `117-armor.sh`. Der Kern ist damit am PC ausgeschlossen, soweit er sich hier zeigt.
+- **Grafik-Seite (Redmi 15 = Adreno 610, „glitch, then crash“ in beiden Untermenüs):** Der GLES-Renderer (Standard)
+  fragte nie nach GL-Fehlern; ein Treiber ohne Speicher lässt erst Hochladungen scheitern (falsches Bild) und stürzt
+  später ab. **Neu** (`app/src/main/cpp/gx_gl.cpp`, `WatchErrors`): jedes 30. Bild `glGetError`; bei
+  `GL_OUT_OF_MEMORY` eine Zeile „GX: the GL driver is out of memory …“ mit Spieltexturen, HD-/Schärfer-Text-Bytes und
+  Programmen, dann gibt der Renderer die Spieltexturen frei (der Kern schickt sie neu, wie bei einem Paketwechsel,
+  `TakeTexturesDropped`) und halbiert die Programmgrenze (Binärdateien laden wieder); höchstens alle 300 Bilder.
+  Andere GL-Fehler: die ersten fünf als Zeile. Ohne Fehlermeldung des Treibers ändert sich nichts. PC-Schalter
+  `RE4_GX_TEST_OOM=N`: geprüft mit `gx_chunk_render` (llvmpipe): Zeile kommt, kein Absturz, Bild gleich.
+- **Was ein künftiger Bericht klären würde:** `crash.txt` (Kern oder `libGLESv2_adreno`/`libre4decomp`), im
+  `core-log` „GX: the GL driver is out of memory“ / „GX: GL error“, „run: sub screen open“, der Raum, die GX-Zeilen
+  (Programme, Texturen) davor, „DVD: language pack … reads N files“, „cheat:“-Zeilen.
+
 ## 1.1.6 (ab 26.11.2026, auf 1.1.5 = 219acfda)
 
 Version 1.1.6 (versionCode 130), Branch `workthread-116` (Worktree `RE4-wt116`, WSL `~/re4-wt116`), Releasetext

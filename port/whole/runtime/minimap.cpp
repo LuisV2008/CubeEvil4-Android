@@ -411,7 +411,14 @@ void hook(unsigned frame)
     GLOBAL_WK* g = pG;
     if (!live(g) || g->Rno0 != 3)
         return;
-    if (gPickWanted)
+    // (1.1.7, report Redmi 15: the case and the merchant crashed in the castle) A sub screen (the case, the shop, the
+    // files) swaps 3 MB of the game's memory from pStFnt out to ARAM (SubScreenOpen: STA_SUB_SCRN on before, off after
+    // it is swapped back), the room's archive with its item areas and floor often inside: nothing of the room is read
+    // meanwhile (the minimap is not shown there; the last lists stay). Events swap memory too (event modules over an
+    // enemy's data): the pickups wait for them.
+    if (StaFlagChk(g, STA_SUB_SCRN))
+        return;
+    if (gPickWanted && !StaFlagChk(g, STA_EVENT))
         pickups(frame);
     if (!gWanted)
         return;

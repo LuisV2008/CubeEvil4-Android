@@ -2585,10 +2585,11 @@ bool drawGx() {
     gx->SetTexturePack(texPack, texPackLevel, texPackBudget);
   }
   if (gx->TakeTexturesDropped()) {
-    // another pack, level or the PSone demake: the textures went, the game core sends them all again
+    // another pack, level or the PSone demake (1.1.7: or the GL driver out of memory, gx_gl.cpp WatchErrors): the
+    // textures went, the game core sends them all again
     smoothDrop();
     api.gxDetach();
-    LOG("HD textures: the game's textures are sent again");
+    LOG("GX: the game's textures are sent again");
   }
   {
     const re4gx::GxStats &st = gx->Stats();
