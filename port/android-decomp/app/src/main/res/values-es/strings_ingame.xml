@@ -651,4 +651,6 @@
     <string name="ingame_lang_no_language">No importado: el paquete no cambia ningún texto.</string>
     <string name="ingame_lang_bad_zip">No se puede leer el archivo ZIP (dañado, cifrado o comprimido de otra forma). Descomprímelo en un PC e importa la carpeta.</string>
     <string name="ingame_lang_read_failed">No se pudo leer el paquete: %1$s</string>
+    <string name="ingame_finisher">Remate por la espalda</string>
+    <string name="ingame_finisher_help">Remate por la espalda: un disparo en la cabeza a un ganado, desde atrás y de cerca, lo mata al instante. Todo lo demás sigue como en el juego.</string>
 </resources>

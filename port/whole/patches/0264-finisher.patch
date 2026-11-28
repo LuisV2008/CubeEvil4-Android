@@ -1,0 +1,20 @@
+# Port patch, "Rear headshot finisher" (1.1.7, runtime/finisher.cpp; app menu, Cheats & Mods, off by default).
+# A head hit on a Ganado (em10) from behind and close enough takes its whole life, before LifeDownSet2.
+--- a/src/em10/em10.cpp	2026-11-28 01:53:26.579504788 -0500
++++ b/src/em10/em10.cpp	2026-11-28 01:53:26.759504788 -0500
+@@ -831,6 +831,7 @@
+ // Per-frame damage check, first thing in cEm10::move. Explosions and fire blow the Ganado away or kill
+ // it, and a weapon hit dispatches the reaction through Em10DmSetWep_tbl. A hit also rings the "bell"
+ // damage notify (Status_flg[1] bit29) and makes the Ganado find the player.
++extern "C" int re4_finisher_dmg(cEm10* em, int dmg, int head); /* port (patch 0264) */
+ void em10DmCk(cEm10* em)
+ {
+     FREE_EM10* w = EM10_WK(em);
+@@ -957,6 +958,7 @@
+         return;
+     }
+     dmg = em10SetDmVal(em);
++    dmg = re4_finisher_dmg(em, dmg, em->dmg.m_pDamageYarare && em->dmg.m_pDamageYarare->parts_no == 5); /* port (patch 0264) */
+     LifeDownSet2(em, dmg, 0, 0);
+     w->Claw_hp -= dmg;
+     if (w->Claw_hp & 0x8000) {
