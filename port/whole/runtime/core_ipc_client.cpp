@@ -1028,6 +1028,23 @@ int re4ipc_room_pickups(float* out, int max, unsigned* info)
     return n;
 }
 
+int re4ipc_quick_weapon(int how, char* name, int size, int* info)
+{
+    Reply r;
+    if (!call(kQuickWeapon, how, 0, 0, nullptr, 0, 2000, &r) || r.dataBytes() != 56) return 0;
+    if (info) memcpy(info, r.data(), 16);
+    if (name && size > 0) {
+        const char* n = (const char*) r.data() + 16;
+        size_t k = 0;
+        while (k + 1 < (size_t) size && k < 40 && n[k]) {
+            name[k] = n[k];
+            k++;
+        }
+        name[k] = 0;
+    }
+    return (int) r.header.a;
+}
+
 void re4ipc_swipe(int dir)
 {
     post(kSwipe, dir, 0, 0);

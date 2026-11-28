@@ -3555,6 +3555,57 @@ struct GlRenderer final : GxCore {
     GlRenderer &m = *this;
     m.TimerEnd();
     m.FenceAfterChunk();
+    if (m.stats.chunks % 30 == 0 || m.testOom)
+      m.WatchErrors();
+  }
+  // (1.1.7, report Redmi 15 / Adreno 610: the case and the merchant "glitch, then crash") Every 30th chunk the GL
+  // errors since: a driver out of memory (GL_OUT_OF_MEMORY) fails its uploads first (wrong pictures) and crashes
+  // later. Then a line with what the renderer holds, and it lets go of what it can make again: the game's textures
+  // (the core sends them anew), half the programs (their binaries load again). At most once in 300 chunks; other
+  // errors only counted in a few lines. Nothing changes while the driver reports none.
+  unsigned glErrors = 0, glOutOfMemory = 0;
+  // RE4_GX_TEST_OOM=N (tests): chunk N reports GL_OUT_OF_MEMORY once, as a driver out of memory would
+  const unsigned testOom = [] {
+    const char *v = std::getenv("RE4_GX_TEST_OOM");
+    return v && *v ? static_cast<unsigned>(std::strtoul(v, nullptr, 10)) : 0u;
+  }();
+  std::uint32_t oomHandledAt = 0;
+  bool oomHandled = false;
+  void WatchErrors() {
+    bool oom = false;
+    for (int i = 0; i < 8; i++) {
+      const GLenum e = glGetError();
+      if (e == GL_NO_ERROR)
+        break;
+      if (e == GL_OUT_OF_MEMORY) {
+        oom = true;
+      } else if (glErrors++ < 5) {
+        GXLOG("GX: GL error 0x%x after chunk %u (%u so far; only the first 5 shown)", static_cast<unsigned>(e),
+              static_cast<unsigned>(stats.chunks), glErrors);
+      }
+    }
+    if (testOom && stats.chunks >= testOom && !oomHandled)
+      oom = true;
+    if (!oom)
+      return;
+    glOutOfMemory++;
+    const bool react = !oomHandled || stats.chunks - oomHandledAt >= 300;
+    if (glOutOfMemory <= 10)
+      GXLOG("GX: the GL driver is out of memory (GL_OUT_OF_MEMORY, %u so far) after chunk %u: %zu game textures, HD "
+            "%zu KB, sharper words %zu KB, %zu programs (%zu merged), at most %zu; %s",
+            glOutOfMemory, static_cast<unsigned>(stats.chunks), textures.size(), hdBytes >> 10, wordBytes >> 10,
+            programs.size(), mergedPrograms.size(), maxPrograms,
+            react ? "letting go of the textures and half the programs" : "(let go of them a short while ago)");
+    if (!react)
+      return;
+    oomHandled = true;
+    oomHandledAt = stats.chunks;
+    maxPrograms = std::max<std::size_t>(maxPrograms / 2, 500);
+    maxMerged = std::max<std::size_t>(maxMerged / 2, 250);
+    EvictPrograms(programs, maxPrograms * 3 / 4);
+    EvictPrograms(mergedPrograms, maxMerged * 3 / 4);
+    DropTextures();
+    texturesDropped = true;  // the game core sends them all again (TakeTexturesDropped, as after a pack change)
   }
   void RunLeave() override {
     GlRenderer &m = *this;

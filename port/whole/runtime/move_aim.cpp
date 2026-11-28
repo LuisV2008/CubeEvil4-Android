@@ -54,9 +54,15 @@ bool gMovedNow;
 float gMoveX, gMoveY, gMoveSpeed;
 
 // RE4_TEST_MOVE_AIM="x,y,from,to" (frames after the player is free): the app's stick at each game frame from .. to;
+// (1.1.7) up to 8 such windows separated by ';' (e.g. moving before and after a retry of the room, RE4_TEST_CONTINUE);
 // RE4_TRACE_MOVE=1: one "move:" line a frame (his routine, his position) from the player being free
-float gTestX, gTestY;
-long gTestFrom = -1, gTestTo = -1;
+const int kTestWindows = 8;
+struct TestWindow {
+    float x, y;
+    long from, to;
+};
+TestWindow gTests[kTestWindows];
+int gTestCount;
 bool gTrace;
 unsigned gTraceLines;
 
@@ -111,13 +117,16 @@ const char* why(cPlayer* pl)
 void moveHook(unsigned frame)
 {
     const long freeAt = re4_trace_free_at();
-    if (freeAt >= 0 && gTestFrom >= 0 && (long) frame == freeAt + gTestFrom) {
-        __atomic_store_n(&gXBits, bits(gTestX), __ATOMIC_RELAXED);
-        __atomic_store_n(&gYBits, bits(gTestY), __ATOMIC_RELAXED);
-    }
-    if (freeAt >= 0 && gTestFrom >= 0 && (long) frame == freeAt + gTestTo + 1) {
-        __atomic_store_n(&gXBits, 0u, __ATOMIC_RELAXED);
-        __atomic_store_n(&gYBits, 0u, __ATOMIC_RELAXED);
+    for (int i = 0; freeAt >= 0 && i < gTestCount; i++) {
+        const TestWindow& t = gTests[i];
+        if ((long) frame == freeAt + t.from) {
+            __atomic_store_n(&gXBits, bits(t.x), __ATOMIC_RELAXED);
+            __atomic_store_n(&gYBits, bits(t.y), __ATOMIC_RELAXED);
+        }
+        if ((long) frame == freeAt + t.to + 1) {
+            __atomic_store_n(&gXBits, 0u, __ATOMIC_RELAXED);
+            __atomic_store_n(&gYBits, 0u, __ATOMIC_RELAXED);
+        }
     }
     cPlayer* pl = pPL;
     if (gTrace && freeAt >= 0 && pl && gTraceLines < 6000) {
@@ -181,18 +190,17 @@ struct TestInit {
     TestInit()
     {
         const char* t = getenv("RE4_TEST_MOVE_AIM");
-        if (t && *t) {
-            float x = 0, y = 0;
-            long from = -1, to = -1;
+        for (const char* c = t; c && *c && gTestCount < kTestWindows;) {
+            TestWindow w = {0.0f, 0.0f, -1, -1};
             char* e;
-            x = strtof(t, &e);
-            if (*e == ',') y = strtof(e + 1, &e);
-            if (*e == ',') from = strtol(e + 1, &e, 10);
-            if (*e == ',') to = strtol(e + 1, &e, 10);
-            gTestX = x;
-            gTestY = y;
-            gTestFrom = from;
-            gTestTo = to;
+            w.x = strtof(c, &e);
+            if (*e == ',') w.y = strtof(e + 1, &e);
+            if (*e == ',') w.from = strtol(e + 1, &e, 10);
+            if (*e == ',') w.to = strtol(e + 1, &e, 10);
+            if (w.from >= 0) {
+                gTests[gTestCount++] = w;
+            }
+            c = *e == ';' ? e + 1 : 0;
         }
         const char* tr = getenv("RE4_TRACE_MOVE");
         gTrace = tr && *tr == '1';

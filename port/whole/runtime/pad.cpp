@@ -293,6 +293,15 @@ void re4_add_frame_hook(void (*hook)(unsigned))
     re4_log("pad: no room for another frame hook");
 }
 
+// (1.1.7) A filter on channel 0's buttons as the game gets them (re4_pad_button_filter: the quick weapon switch takes the
+// D-pad's left and right while the player plays without aiming, runtime/quick_weapon.cpp); the game thread.
+static unsigned short (*g_buttonFilter)(unsigned short);
+
+void re4_pad_button_filter(unsigned short (*f)(unsigned short))
+{
+    g_buttonFilter = f;
+}
+
 // Buttons a frame hook adds to channel 0 for the frame it runs in (re4_pad_add:
 // the knife swipe, runtime/knife_swipe.cpp), on top of the controller or script.
 static u16 g_add;
@@ -496,6 +505,9 @@ u32 PADRead(PADStatus* status)
             status[0].analogA = 0xFF;
         }
         g_add = 0;
+    }
+    if (g_buttonFilter) {
+        status[0].button = g_buttonFilter(status[0].button);
     }
     g_reported = status[0].button;
     // every change of the buttons (scripted or from the device)

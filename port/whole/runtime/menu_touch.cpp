@@ -1059,6 +1059,7 @@ extern "C" void re4_touch_file_keys(int mode, int cursor, int target, u64* keys,
 }
 
 extern "C" void re4_core_touch(float u, float v);
+extern "C" void re4_quick_weapon_touch(int phase, float u, float v);  // runtime/quick_weapon.cpp (1.1.7)
 
 namespace {
 
@@ -1300,6 +1301,7 @@ extern "C" void re4_core_touch(float u, float v)
     if (u >= 3.5f) {
         const int phase = u >= 9.5f ? 3 : (int) ((u - 4.0f) * 0.5f);
         const f32 du = phase == 3 ? 0.5f : u - 4.0f - 2.0f * (f32) phase;
+        re4_quick_weapon_touch(phase, du, v);  // (1.1.7) a finger on the life gauge while playing
         __atomic_store_n(&gDragU, bits(du < 0.0f ? 0.0f : du > 1.0f ? 1.0f : du), __ATOMIC_RELAXED);
         __atomic_store_n(&gDragV, bits(v), __ATOMIC_RELAXED);
         if (phase == 0) {

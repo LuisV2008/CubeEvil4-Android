@@ -53,7 +53,9 @@ public final class CoreInput {
       GC_Z = 0x0010, GC_R = 0x0020, GC_L = 0x0040, GC_A = 0x0100, GC_B = 0x0200, GC_X = 0x0400,
       GC_Y = 0x0800, GC_START = 0x1000;
   // what a key does for the app instead of the game
-  public static final int APP_NONE = 0, APP_MENU = 1, APP_GX_DUMP = 2;
+  public static final int APP_NONE = 0, APP_MENU = 1, APP_GX_DUMP = 2,
+      // "Quick weapon switch" (1.1.7): the mapping's "Next weapon" / "Previous weapon"
+      APP_NEXT_WEAPON = 3, APP_PREV_WEAPON = 4;
   // android.view.KeyEvent key codes
   static final int KEYCODE_DPAD_UP = 19, KEYCODE_DPAD_DOWN = 20, KEYCODE_DPAD_LEFT = 21,
       KEYCODE_DPAD_RIGHT = 22, KEYCODE_BUTTON_A = 96, KEYCODE_BUTTON_B = 97,
@@ -398,7 +400,10 @@ public final class CoreInput {
   public int appFunctionOf(int keyCode, boolean keyboard) {
     ActionMap m = mapping(keyboard);
     if (m == null) return appFunction(keyCode);
-    if (m.singleOn(keyCode) == ActionMap.APP_MENU) return APP_MENU;
+    int single = m.singleOn(keyCode);
+    if (single == ActionMap.APP_MENU) return APP_MENU;
+    if (single == ActionMap.NEXT_WEAPON) return APP_NEXT_WEAPON;
+    if (single == ActionMap.PREV_WEAPON) return APP_PREV_WEAPON;
     return !keyboard && keyCode == KEYCODE_BUTTON_THUMBR && !m.uses(keyCode) ? APP_GX_DUMP : APP_NONE;
   }
 

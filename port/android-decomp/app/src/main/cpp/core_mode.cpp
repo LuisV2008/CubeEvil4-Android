@@ -131,6 +131,7 @@ struct CoreApi {
   void (*setLeonJacket)(int){};   // optional (cores since 17.11.2026, 1.0): the cheat "Leon's jacket"
   void (*mouseMenu)(float, float, int){};  // optional (cores since 1.1.0): the mouse in the game's menus
   void (*quickReload)(void){};    // optional (cores since 1.1.0): one reload without the aim
+  int (*quickWeapon)(int, char *, int, int *){};  // optional (cores since 1.1.7): "Quick weapon switch"
   void (*photoMode)(int, int){};  // optional (cores since 1.1.0): photo mode
   void (*photoInput)(int, int, int){};
   int (*rtShadows)(void){};       // optional (cores since 16.11.2026): the real-time shadows the core knows
@@ -494,6 +495,7 @@ void loadCore(JNIEnv *env) {
   api.setLeonJacket = reinterpret_cast<void (*)(int)>(dlsym(api.main, "re4_core_set_leon_jacket"));
   api.mouseMenu = reinterpret_cast<void (*)(float, float, int)>(dlsym(api.main, "re4_core_mouse_menu"));
   api.quickReload = reinterpret_cast<void (*)(void)>(dlsym(api.main, "re4_core_quick_reload"));
+  api.quickWeapon = reinterpret_cast<int (*)(int, char *, int, int *)>(dlsym(api.main, "re4_core_quick_weapon"));
   api.photoMode = reinterpret_cast<void (*)(int, int)>(dlsym(api.main, "re4_core_photo_mode"));
   api.photoInput = reinterpret_cast<void (*)(int, int, int)>(dlsym(api.main, "re4_core_photo_input"));
   api.rtShadows = reinterpret_cast<int (*)(void)>(dlsym(api.main, "re4_core_rt_shadows"));
@@ -2585,10 +2587,11 @@ bool drawGx() {
     gx->SetTexturePack(texPack, texPackLevel, texPackBudget);
   }
   if (gx->TakeTexturesDropped()) {
-    // another pack, level or the PSone demake: the textures went, the game core sends them all again
+    // another pack, level or the PSone demake (1.1.7: or the GL driver out of memory, gx_gl.cpp WatchErrors): the
+    // textures went, the game core sends them all again
     smoothDrop();
     api.gxDetach();
-    LOG("HD textures: the game's textures are sent again");
+    LOG("GX: the game's textures are sent again");
   }
   {
     const re4gx::GxStats &st = gx->Stats();
@@ -3520,6 +3523,7 @@ void useCoreProcess(const std::string &why) {
   api.setLeonJacket = re4ipc_set_leon_jacket;
   api.mouseMenu = re4ipc_mouse_menu;
   api.quickReload = re4ipc_quick_reload;
+  api.quickWeapon = re4ipc_quick_weapon;
   api.photoMode = re4ipc_photo_mode;
   api.photoInput = re4ipc_photo_input;
   api.rtShadows = re4ipc_rt_shadows;
@@ -4040,6 +4044,34 @@ extern "C" JNIEXPORT void JNICALL Java_com_ast_re4decomp_CoreBridge_mouseMenu(JN
 // "Reload without aiming" (1.1.0): the keyboard's reload key without the aim (runtime/aim_options.cpp, patch 0241).
 extern "C" JNIEXPORT void JNICALL Java_com_ast_re4decomp_CoreBridge_quickReload(JNIEnv *, jclass) {
   if (api.quickReload) api.quickReload();
+}
+
+// "Quick weapon switch" (1.1.7, runtime/quick_weapon.cpp): how 0x40000000 | on | grenades << 1 the menu's switches,
+// +1 / -1 the next / previous weapon of the case, 101..109 its 1st..9th (the keyboard's 1..9)
+extern "C" JNIEXPORT void JNICALL Java_com_ast_re4decomp_CoreBridge_quickWeapon(JNIEnv *, jclass, jint how) {
+  if (api.quickWeapon) api.quickWeapon(how, nullptr, 0, nullptr);
+}
+
+// The quick weapon switch's state for the app's label (CoreActivity): out[0] the switches done, out[1] the last one's
+// place, out[2] the count; out[3..6] the picture's box on the surface (x, y down, width, height, buffer pixels);
+// out[7], out[8] the life gauge's left end and its lowest line on the surface (the label goes to its left on that
+// line; -1 when the core does not know it). Returns the last weapon's name, null with a core without it.
+extern "C" JNIEXPORT jstring JNICALL Java_com_ast_re4decomp_CoreBridge_quickWeaponState(JNIEnv *env, jclass,
+                                                                                      jintArray out) {
+  if (!api.quickWeapon || !out || env->GetArrayLength(out) < 9) return nullptr;
+  char name[48] = {};
+  int info[4] = {0, 0, -1, -1};
+  const int serial = api.quickWeapon(0, name, sizeof(name), info);
+  const int x = picX.load(), y = picY.load(), w = picW.load(), h = picH.load();
+  const float top = picTop.load(), rows = picRows.load();
+  int gaugeLeft = -1, gaugeBottom = -1;
+  if (info[2] >= 0 && info[3] >= 0 && w > 0 && h > 0 && rows > 0.f) {
+    gaugeLeft = x + static_cast<int>(static_cast<float>(info[2]) / 10000.f * static_cast<float>(w) + 0.5f);
+    gaugeBottom = y + static_cast<int>((static_cast<float>(info[3]) / 4480.f - top) / rows * static_cast<float>(h) + 0.5f);
+  }
+  const jint state[9] = {serial, info[0], info[1], x, y, w, h, gaugeLeft, gaugeBottom};
+  env->SetIntArrayRegion(out, 0, 9, state);
+  return env->NewStringUTF(name);
 }
 
 // Photo mode (1.1.0, runtime/photo_mode.cpp): op 1 on with the mask, 0 off, 2 the mask; false: a core without it.

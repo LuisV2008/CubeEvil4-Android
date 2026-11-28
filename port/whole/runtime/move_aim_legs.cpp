@@ -34,6 +34,7 @@
 #include "motion.h"
 
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -66,6 +67,8 @@ const char* const kName[kLayers] = {"walk", "back step"};
 struct Layer {
     MOTION_INFO w;
     void* data;
+    void* seq;
+    void* logged;   // the motion of the last log line (one line per new motion, not per aim)
     u32 ik[kMaxParts];
     float stride;   // the root's distance over one cycle (units)
     float weight;   // its share of the legs now
@@ -158,12 +161,51 @@ void ikSwap(cPlayer* pl, u32* keep, const u32* bits)
     }
 }
 
+// (1.1.7) The layer's motion as MotionSetCore set it up, still the same in memory: the motion header's key table
+// where MotionSetCore found it, relocated in place (its words absolute pointers: the game's own test, (s32) < 0).
+// A motion file loaded anew (a room loaded again after a death, a continue or a retry puts the weapon's motions at
+// the same place again) has its key offsets raw again (0x3c8...): a layer set up before read one as a pointer
+// (SIGSEGV in HermiteInterpolation, reports moto g53 5G and Poco F6 of 27.11.2026).
+bool keysReady(const Layer& L)
+{
+    const MotionData* d = (const MotionData*) L.data;
+    if (!d || L.w.pMot != d || L.w.Joint_num != d->nParts || d->nParts == 0) {
+        return false;
+    }
+    uintptr_t t = (uintptr_t) d + 3u + (uintptr_t) d->nParts * 2u + d->nParts;  // MotionSetCore's key table
+    t = (t + 3u) & ~(uintptr_t) 3u;
+    const u32* tbl = (const u32*) t + 1;
+    if ((const void*) L.w.pHermite_data != (const void*) tbl) {
+        return false;
+    }
+    for (int i = 0; i < d->nParts; i++) {
+        if ((s32) tbl[i] >= 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void setLayer(cPlayer* pl, Layer& L, int no, void* data, void* seq)
 {
+    // (1.1.7) whether its keys are still raw offsets (fresh from the disc, the game has not played it since): then
+    // MotionSetCore relocates them here, as the game's own MotionSet would
+    const MotionData* d = (const MotionData*) data;
+    uintptr_t t = (uintptr_t) d + 3u + (uintptr_t) d->nParts * 2u + d->nParts;
+    t = ((t + 3u) & ~(uintptr_t) 3u) + 4u;
+    const bool raw = d->nParts && (s32) *(const u32*) t >= 0;
     memset(&L.w, 0, sizeof(L.w));
     L.w.Mot_flag = 0x70000000;
     MotionSetCore(pl, &L.w, data, seq, 0, 4, 0);
     L.data = data;
+    L.seq = seq;
+    if (raw) {
+        static unsigned told;
+        if (told++ < 16) {
+            re4_log("move and aim (legs): the %s of player type %d, weapon %d was fresh from the disc (raw keys), set up "
+                    "here", kName[no], (int) pG->pl_type, (int) pG->weapon_no);
+        }
+    }
     L.stride = sqrtf(L.w.Pos_dist.x * L.w.Pos_dist.x + L.w.Pos_dist.z * L.w.Pos_dist.z);
     // its IK chains on the legs (IKInit marks them on the model; the aim's marks back at once)
     u32 aim[kMaxParts];
@@ -176,8 +218,37 @@ void setLayer(cPlayer* pl, Layer& L, int no, void* data, void* seq)
         chains += (L.ik[i] & 4) ? 1 : 0;
     }
     ikSwap(pl, 0, aim);
-    re4_log("move and aim (legs): %s of player type %d, weapon %d: %d frames, stride %.0f, %d IK chains", kName[no],
-            (int) pG->pl_type, (int) pG->weapon_no, (int) L.w.Seq_frame_num, (double) L.stride, chains);
+    if (L.logged != data) {
+        L.logged = data;
+        re4_log("move and aim (legs): %s of player type %d, weapon %d: %d frames, stride %.0f, %d IK chains", kName[no],
+                (int) pG->pl_type, (int) pG->weapon_no, (int) L.w.Seq_frame_num, (double) L.stride, chains);
+    }
+}
+
+// (1.1.7) The layer ready to play this frame: its motion still the one the player's table has now (weapon, damage,
+// character) and set up on the data as it is in memory now; else set up anew; false (the layer not played, the legs
+// as the game has them) when the table has none or its data does not hold together
+bool layerReady(cPlayer* pl, Layer& L, int no)
+{
+    void *data, *seq;
+    motionOf(pl, no, &data, &seq);
+    if (!data) {
+        L.data = 0;
+        return false;
+    }
+    if (data != L.data || seq != L.seq || !keysReady(L)) {
+        setLayer(pl, L, no, data, seq);
+    }
+    if (!keysReady(L) || L.w.Seq_frame_num == 0) {
+        static unsigned told;
+        if (told++ < 8) {
+            re4_log("move and aim (legs): the %s of player type %d, weapon %d is not usable (motion %p), the game's legs",
+                    kName[no], (int) pG->pl_type, (int) pG->weapon_no, data);
+        }
+        L.data = 0;
+        return false;
+    }
+    return true;
 }
 
 // Model-space matrix of bone i: inverse(model) * its world matrix
@@ -306,6 +377,8 @@ void resetLayers()
 {
     for (Layer& L : gL) {
         L.weight = L.target = L.speed = 0.0f;
+        L.data = 0;  // (1.1.7) set up anew at the next aim: a room loaded since may have put new data at the same place
+        L.seq = 0;
     }
     gYaw = 0.0f;
     gBob = 0.0f;
@@ -388,14 +461,10 @@ void re4_move_aim_legs(cPlayer* pl)
             if (want[k] <= 0.0f) {
                 continue;
             }
-            void *data, *seq;
-            motionOf(pl, k, &data, &seq);
-            if (!data) {
+            if (!layerReady(pl, L, k)) {
                 want[k] = 0.0f;
+                L.weight = 0.0f;
                 continue;
-            }
-            if (data != L.data) {
-                setLayer(pl, L, k, data, seq);
             }
             const float dir = k == kBack ? yaw + kPi : yaw;
             const float along = fabsf(v * cosf(a - dir));
@@ -436,6 +505,10 @@ void re4_move_aim_legs(cPlayer* pl)
     for (int k = 0; k < kLayers; k++) {
         Layer& L = gL[k];
         if (L.weight <= 0.0f || !L.data) {
+            continue;
+        }
+        if (!layerReady(pl, L, k)) {
+            L.weight = 0.0f;  // (1.1.7) also a layer fading out: only on data that holds together
             continue;
         }
         evalLayer(pl, L, gYaw);

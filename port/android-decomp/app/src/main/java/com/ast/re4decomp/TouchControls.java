@@ -484,6 +484,25 @@ final class TouchControls implements CoreTouch.Host {
     return false;
   }
 
+  /**
+   * (1.1.7) The shown controls other than look zones as drawn, in the window's pixels (a square of the smaller of the
+   * control's width and height: RetroTouch's round buttons and sticks); none while hidden or edited. The quick weapon
+   * switch's label keeps clear of them (QuickWeaponLabel.avoid).
+   */
+  java.util.List<android.graphics.RectF> shownControls() {
+    java.util.List<android.graphics.RectF> out = new ArrayList<>();
+    if (!shown || editing || view.getWidth() <= 0) return out;
+    view.getLocationInWindow(where);
+    int w = view.getWidth(), h = view.getHeight();
+    for (RetroTouchControl c : view.getCurrentLayout().getControls()) {
+      if (c.getType() == RetroTouchControl.Type.LOOK_ZONE) continue;
+      float half = Math.min(c.getWidth() * w, c.getHeight() * h) * 0.5f;
+      float cx = where[0] + c.getX() * w, cy = where[1] + c.getY() * h;
+      out.add(new android.graphics.RectF(cx - half, cy - half, cx + half, cy + half));
+    }
+    return out;
+  }
+
   /** A point of the window inside a look zone of the current layout (as RetroTouch tests it). */
   private boolean inLookZone(float x, float y) {
     if (editing || view.getWidth() <= 0) return false;

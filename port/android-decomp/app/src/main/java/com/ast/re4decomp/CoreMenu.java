@@ -133,6 +133,9 @@ final class CoreMenu extends Dialog {
     void gentleQteChanged(boolean on);
     /** "Rapid fire" (1.1.6, Assists; CoreActivity.RAPID_FIRE holds it): the guns fire twice as fast. */
     void rapidFireChanged(boolean on);
+    /** "Quick weapon switch" (1.1.7) and its "Grenades in the cycle". */
+    default void quickWeaponChanged(boolean on) { }
+    default void quickWeaponGrenadesChanged(boolean on) { }
     /** The cheat "Costumes · Leon's jacket" (1.0): Leon keeps his brown jacket (CoreBridge.setLeonJacket). */
     void leonJacketChanged(boolean on);
     /** The European discs are imported: the home page offers "Game language". */
@@ -1477,8 +1480,16 @@ final class CoreMenu extends Dialog {
     // "Rapid fire" beside it (1.1.6, wish of the project owner: every playable character's guns twice as fast), off
     toggle(lastRow, R.string.ingame_rapid_fire, input.getBoolean(CoreActivity.RAPID_FIRE, false),
         on -> host.rapidFireChanged(on));
+    // "Quick weapon switch" (1.1.7, wish of the project owner, 28.11.2026): the case's weapons without the case (D-pad
+    // left / right, the mapped keys, 1..9, the wheel, a finger on the life gauge), off; "Grenades in the cycle" beside it
+    MenuLayout.Buttons quickRow = buttonsRow(assists);
+    toggle(quickRow, R.string.ingame_quick_weapon, input.getBoolean(CoreActivity.QUICK_WEAPON, false),
+        on -> host.quickWeaponChanged(on));
+    toggle(quickRow, R.string.ingame_quick_weapon_grenades,
+        input.getBoolean(CoreActivity.QUICK_WEAPON_GRENADES, false), on -> host.quickWeaponGrenadesChanged(on));
     help(R.string.ingame_alternate_help); help(R.string.ingame_latch_help); help(R.string.ingame_auto_aim_help);
     help(R.string.ingame_always_run_help); help(R.string.ingame_gentle_qte_help); help(R.string.ingame_rapid_fire_help);
+    help(R.string.ingame_quick_weapon_help);
     help(R.string.ingame_aim_help);
     help(R.string.ingame_body_turn_help);
     help(R.string.ingame_knife_swipe_help);
@@ -1625,7 +1636,8 @@ final class CoreMenu extends Dialog {
       R.string.ingame_act_aim, R.string.ingame_act_fire, R.string.ingame_act_reload, R.string.ingame_act_knife,
       R.string.ingame_act_slash, R.string.ingame_act_ashley, R.string.ingame_act_inventory, R.string.ingame_act_map,
       R.string.ingame_act_options, R.string.ingame_act_menu, R.string.ingame_act_c_up, R.string.ingame_act_c_down,
-      R.string.ingame_act_c_left, R.string.ingame_act_c_right};
+      R.string.ingame_act_c_left, R.string.ingame_act_c_right, R.string.ingame_act_next_weapon,
+      R.string.ingame_act_prev_weapon};
 
   /** An action's name; the app menu's says "held: debug menu" only with the debug build's discs (the retail discs
    *  have none, 06.11.2026). */

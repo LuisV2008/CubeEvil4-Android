@@ -117,6 +117,7 @@ struct Core {
     int (*cheatAction)(int);
     int (*roomOutline)(float*, int, unsigned*);
     int (*roomPickups)(float*, int, unsigned*);
+    int (*quickWeapon)(int, char*, int, int*);  // 1.1.7
     void (*setLaserColour)(int);
     void (*setViewDistance)(int);
     void (*setCpuSkip)(int);
@@ -803,6 +804,7 @@ bool loadCore(std::string& problem)
     bind(core.cheatAction, "re4_core_cheat_action");
     bind(core.roomOutline, "re4_core_room_outline", false);
     bind(core.roomPickups, "re4_core_room_pickups", false);
+    bind(core.quickWeapon, "re4_core_quick_weapon", false);
     bind(core.setLaserColour, "re4_core_set_laser_colour", false);
     bind(core.setViewDistance, "re4_core_set_view_distance", false);
     bind(core.setCpuSkip, "re4_core_set_cpu_skip", false);
@@ -981,6 +983,12 @@ void serve()
             std::vector<unsigned char> data(8 + (size_t) max * 16);
             const int n = core.roomPickups ? core.roomPickups((float*) (data.data() + 8), max, (unsigned*) data.data()) : 0;
             reply(h.id, n, "", data.data(), 8 + (size_t) (n > 0 ? n : 0) * 16);
+            break;
+        }
+        case kQuickWeapon: {
+            unsigned char data[56] = {};  // 4 ints (re4_core_quick_weapon's info) + the name
+            const int n = core.quickWeapon ? core.quickWeapon((int) h.a, (char*) data + 16, 40, (int*) data) : 0;
+            reply(h.id, n, "", data, sizeof(data));
             break;
         }
         case kSwipe:

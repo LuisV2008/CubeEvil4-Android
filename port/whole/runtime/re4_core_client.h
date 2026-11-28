@@ -100,6 +100,7 @@ void re4ipc_set_cheats(int bits);
 int re4ipc_cheat_action(int what);
 int re4ipc_room_outline(float* out, int maxEdges, unsigned* info);
 int re4ipc_room_pickups(float* out, int max, unsigned* info);
+int re4ipc_quick_weapon(int how, char* name, int size, int* info);  // 1.1.7
 void re4ipc_set_laser_colour(int colour);
 void re4ipc_set_view_distance(int percent);
 void re4ipc_set_cpu_skip(int on);

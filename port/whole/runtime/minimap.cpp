@@ -33,6 +33,7 @@
 #include "emitem.h"
 #include "etc_model.h"
 
+#include <stdint.h>
 #include <math.h>
 #include <pthread.h>
 #include <time.h>
@@ -263,6 +264,26 @@ void place(const SCE_AT_UNIT* w, const SCE_AT_DATA_ITEM* it, float* xyz)
     xyz[2] = it->item_pos.z;
 }
 
+// (1.1.7) The next area record after `p` as sceAtGetOtAddr finds it (the ordering table's words: the next record's
+// address without its top bit, the table's own entries skipped), but every word read only from memory that is there
+// and at most 4096 steps: this runs from the frame hook (PADRead), not at the game's own times, and when the room's
+// data goes (the ending movie's heap over it, report Poco F6 27.11.2026: 0x92121212 from a word 0x12121212) the
+// game's own walk followed the garbage into unmapped memory (SIGSEGV in sceAtGetOtAddr). 0 at the end or on garbage.
+SCE_AT_DATA* nextArea(SCE_AT_DATA* p, int* steps)
+{
+    while (++*steps < 4096) {
+        if (!live(p) || ((uintptr_t) p & 3u))
+            return 0;
+        const u32 v = p->tag;
+        if (v == 0xFFFFFFFFu)
+            return 0;
+        p = (SCE_AT_DATA*) (uintptr_t) (v | 0x80000000u);
+        if ((s32) v < 0)
+            return live(p) && !((uintptr_t) p & 3u) ? p : 0;
+    }
+    return 0;
+}
+
 int buildPickups(float* out)
 {
     GLOBAL_WK* g = pG;
@@ -270,9 +291,7 @@ int buildPickups(float* out)
     int n = 0;
     SCE_AT_DATA* d = sceAtSetOtStart();
     int guard = 0;
-    while (n < kMaxPickups && (d = sceAtGetOtAddr(d)) != 0 && ++guard < 4096) {
-        if (!live(d))
-            break;
+    while (n < kMaxPickups && (d = nextArea(d, &guard)) != 0) {
         const SCE_AT_UNIT* w = (const SCE_AT_UNIT*) d;
         if (w->id != SCEAT_ID_ITEM)
             continue;
@@ -392,7 +411,14 @@ void hook(unsigned frame)
     GLOBAL_WK* g = pG;
     if (!live(g) || g->Rno0 != 3)
         return;
-    if (gPickWanted)
+    // (1.1.7, report Redmi 15: the case and the merchant crashed in the castle) A sub screen (the case, the shop, the
+    // files) swaps 3 MB of the game's memory from pStFnt out to ARAM (SubScreenOpen: STA_SUB_SCRN on before, off after
+    // it is swapped back), the room's archive with its item areas and floor often inside: nothing of the room is read
+    // meanwhile (the minimap is not shown there; the last lists stay). Events swap memory too (event modules over an
+    // enemy's data): the pickups wait for them.
+    if (StaFlagChk(g, STA_SUB_SCRN))
+        return;
+    if (gPickWanted && !StaFlagChk(g, STA_EVENT))
         pickups(frame);
     if (!gWanted)
         return;
@@ -420,6 +446,17 @@ void hook(unsigned frame)
 }  // namespace
 
 extern "C" {
+
+// (1.1.7, re4_host --core-test "minimap walk") the area records the pickups' walk finds from `start` (an ordering
+// table word): their count; a garbage word ends the walk without reading where it points
+int re4_minimap_walk_count(void* start)
+{
+    int steps = 0, n = 0;
+    SCE_AT_DATA* d = (SCE_AT_DATA*) start;
+    while ((d = nextArea(d, &steps)) != 0)
+        n++;
+    return n;
+}
 
 // The current room's outline for the app's minimap: up to `maxEdges` edges into `out` (x0, z0, x1, z1, y each,
 // world units), info[0] = its number (rises with every new outline), info[1] = the room; returns the edges, 0

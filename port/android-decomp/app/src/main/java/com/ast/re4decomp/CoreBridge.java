@@ -157,6 +157,14 @@ public final class CoreBridge {
   public static native void mouseMenu(float u, float v, boolean click);
   /** "Reload without aiming" (1.1.0, keyboard): one reload through the game's own direct reload (patch 0241). */
   public static native void quickReload();
+  /** "Quick weapon switch" (1.1.7, runtime/quick_weapon.cpp): `how` 0x40000000 | on | grenades << 1 the menu's
+   *  switches, +1 / -1 the next / previous weapon of the case, 101..109 its 1st..9th (the keyboard's 1..9). */
+  public static native void quickWeapon(int how);
+  /** The quick weapon switch's state (QuickWeaponLabel): out[0] the switches done, out[1] the last one's place, out[2]
+   *  the case's count, out[3..6] the picture's box on the surface (x, y, width, height in its buffer's pixels),
+   *  out[7], out[8] the life gauge's left end and lowest line there (-1: not known); `out` holds 9. Returns the last
+   *  weapon's name, null with a core without it. */
+  public static native String quickWeaponState(int[] out);
   /** Photo mode (1.1.0): op 1 on with the mask (1 HUD, 2 Leon, 4 the partner, 8 the enemies hidden), 0 off, 2 the
    *  mask alone; false with a core without it (runtime/photo_mode.cpp). */
   public static native boolean photoMode(int op, int mask);

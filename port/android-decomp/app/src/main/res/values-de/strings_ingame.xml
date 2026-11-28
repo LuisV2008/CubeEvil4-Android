@@ -648,4 +648,9 @@
     <string name="ingame_lang_no_language">Nicht importiert: Das Paket ändert keine Texte.</string>
     <string name="ingame_lang_bad_zip">Die ZIP-Datei lässt sich nicht lesen (beschädigt, verschlüsselt oder anders gepackt). Entpacke sie am PC und importiere den Ordner.</string>
     <string name="ingame_lang_read_failed">Das Paket ließ sich nicht lesen: %1$s</string>
+    <string name="ingame_quick_weapon">Waffen-Schnellwechsel</string>
+    <string name="ingame_quick_weapon_grenades">Granaten mit durchschalten</string>
+    <string name="ingame_quick_weapon_help">Waffen-Schnellwechsel: die Waffe wechseln, ohne den Koffer zu öffnen, in der Reihenfolge des Koffers (von oben links nach unten rechts); das Messer behält seine eigene Taste. Controller: Steuerkreuz links und rechts (nicht beim Zielen; der Stick geht und dreht weiter) oder die Tasten, die du „Nächste Waffe“ und „Vorige Waffe“ zuweist. Tastatur: 1 bis 9 wählen eine Waffe, das Mausrad schaltet durch (außerhalb des Zielfernrohrs). Touch: Tippen auf die runde Lebensanzeige wählt die nächste Waffe, Wischen darauf nach links die nächste, nach rechts die vorige. Granaten mit durchschalten: auch die Granaten.</string>
+    <string name="ingame_act_next_weapon">Nächste Waffe</string>
+    <string name="ingame_act_prev_weapon">Vorige Waffe</string>
 </resources>

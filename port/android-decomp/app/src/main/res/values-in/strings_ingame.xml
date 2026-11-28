@@ -644,4 +644,9 @@
     <string name="ingame_lang_no_language">Tidak diimpor: paket tidak mengubah teks apa pun.</string>
     <string name="ingame_lang_bad_zip">File ZIP tidak bisa dibaca (rusak, terenkripsi, atau dikemas dengan cara lain). Ekstrak di PC lalu impor foldernya.</string>
     <string name="ingame_lang_read_failed">Paket tidak bisa dibaca: %1$s</string>
+    <string name="ingame_quick_weapon">Ganti senjata cepat</string>
+    <string name="ingame_quick_weapon_grenades">Granat ikut diputar</string>
+    <string name="ingame_quick_weapon_help">Ganti senjata cepat: ganti senjata tanpa membuka koper, sesuai urutan koper (dari kiri atas ke kanan bawah); pisau tetap pada tombolnya sendiri. Kontroler: D-pad kiri dan kanan (tidak saat membidik; stik tetap berjalan dan berbelok) atau tombol yang kamu tetapkan untuk \"Senjata berikutnya\" dan \"Senjata sebelumnya\". Keyboard: 1 sampai 9 memilih senjata, roda mouse memutarnya (di luar teropong). Sentuh: ketuk indikator nyawa bundar untuk senjata berikutnya, geser di atasnya ke kiri untuk berikutnya, ke kanan untuk sebelumnya. Granat ikut diputar: granat juga.</string>
+    <string name="ingame_act_next_weapon">Senjata berikutnya</string>
+    <string name="ingame_act_prev_weapon">Senjata sebelumnya</string>
 </resources>

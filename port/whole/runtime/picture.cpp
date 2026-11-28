@@ -179,9 +179,15 @@ bool gHudNarrow;                    // draw the ring 1 / gHudStretch as wide (ke
 // character, empty for the stand-ins), 91 (the PC's pictures of r101 and the tester's picture of 07.11.2026 with
 // Wesker); while Ashley is the partner her small ring and its plate (unit 1's group) 96 (hudExtent, every frame).
 const float kRingBelow = 46.0f, kRingRight = 91.0f, kRingRightPartner = 96.0f;
+// (1.1.7) to the left the ring's outer edge, 49 (the PC's picture of r101); for the quick weapon switch's label
+const float kRingLeft = 49.0f;
 const float kHudMargin = 0.04f;  // of the shown part's height, as re4mm::Place
 const int kBandTop = 56, kBandBottom = 392;  // the band between the game's letterbox bars (cinesco.cpp, the scissor)
 float gRingRight = kRingRight;   // the right end of what is shown
+// (1.1.7, the quick weapon switch's label in the app: re4_core_quick_weapon) the ring's box in the picture as
+// re4_hud_scrn drew it last: its left end across the picture's width (x 10000) and its lowest row of the game's 448
+// (x 10); -1 without a layout from the app or before the ring was drawn
+int gBoxLeftE4 = -1, gBoxBottomE1 = -1;
 
 }  // namespace
 
@@ -195,6 +201,8 @@ extern "C" void re4_core_set_hud_layout(int rows, int stretch_e4, int flags)
             re4_log("core: life gauge where the game puts it");
         }
         gHudTop = gHudBottom = -1;
+        __atomic_store_n(&gBoxLeftE4, -1, __ATOMIC_RELAXED);
+        __atomic_store_n(&gBoxBottomE1, -1, __ATOMIC_RELAXED);
         return;
     }
     if (top != gHudTop || bottom != gHudBottom || stretch != gHudStretch || narrow != gHudNarrow) {
@@ -205,6 +213,17 @@ extern "C" void re4_core_set_hud_layout(int rows, int stretch_e4, int flags)
     gHudNarrow = narrow;
     gHudBottom = bottom;
     gHudTop = top;
+}
+
+// (1.1.7, runtime/quick_weapon.cpp: a finger on the life gauge) the game's rows the screen shows, where the gauge lies in
+// their bottom right corner: the app's layout, else all 448; 1 with a layout
+extern "C" int re4_hud_corner_rows(int* top, int* bottom)
+{
+    const int t = gHudTop, b = gHudBottom;
+    const bool layout = t >= 0 && b > t;
+    *top = layout ? t : 0;
+    *bottom = layout ? b : 448;
+    return layout ? 1 : 0;
 }
 
 // game/id_sys.cpp (patch 0215): the screen matrix a unit is drawn with; IDSystem::m_scrn_mat, for the life gauge's
@@ -239,11 +258,25 @@ extern "C" float (*re4_hud_scrn(const void* unit))[4]
     const float my = kHudMargin * (high - low), mx = my / gHudStretch, g = gHudNarrow ? 1.0f / gHudStretch : 1.0f;
     const float ax = root->pos0.x, ay = root->pos0.y;
     const float tx = side - mx - g * gRingRight, ty = low + my + kRingBelow;
+    // (1.1.7) the ring's box as drawn now (the picture's width known: wide or 4:3), for the quick weapon switch's label
+    __atomic_store_n(&gBoxLeftE4, (int) ((tx - g * kRingLeft + side) / (2.0f * side) * 10000.0f + 0.5f),
+                     __ATOMIC_RELAXED);
+    __atomic_store_n(&gBoxBottomE1, (int) ((224.0f - (ty - kRingBelow) * (448.0f / 480.0f)) * 10.0f + 0.5f),
+                     __ATOMIC_RELAXED);
     memcpy(moved, IDSystem::m_scrn_mat, sizeof(moved));
     moved[0][0] *= g;
     moved[0][3] += tx - g * ax;
     moved[1][3] += ty - ay;
     return moved;
+}
+
+// (1.1.7, runtime/quick_weapon.cpp) the ring's box as last drawn: left across the picture x 10000, lowest row of
+// the 448 x 10; 0 (both -1) without a layout from the app
+extern "C" int re4_hud_gauge_box(int* left_e4, int* bottom_e1)
+{
+    *left_e4 = __atomic_load_n(&gBoxLeftE4, __ATOMIC_RELAXED);
+    *bottom_e1 = __atomic_load_n(&gBoxBottomE1, __ATOMIC_RELAXED);
+    return *left_e4 >= 0 && *bottom_e1 >= 0 ? 1 : 0;
 }
 
 // Every frame while the gauge is in the corner: whether Ashley's small ring is shown (unit 1 of the life meter, as

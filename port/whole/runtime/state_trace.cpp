@@ -892,6 +892,10 @@ long g_weaponAfter = -1;
 int g_weaponNo, g_weaponType;
 long g_weaponStop = -1;
 long g_weaponAt = -1;   // the frame it was asked for
+// (1.1.7) RE4_TEST_WEAPON_THEN="free+N:W": a second weapon after the first (e.g. back to the first one: its file fresh
+// from the disc at the same place again, the Move-and-aim legs' crash of 27.11.2026)
+long g_weapon2After = -1;
+int g_weapon2No;
 extern "C" s32 CARDGetSerialNo(s32 chan, u64* serialNo);  // SDK card (dolphin/card.h clashes with card.h)
 int g_testLoadFile = -1;  // RE4_TEST_LOAD_FILE (0-based)
 long g_weaponLv = -1;   // lv=: the weapon's levels (cItem::lv), no debug endless ammo
@@ -2480,6 +2484,13 @@ void frame(unsigned n)
         TaskExec(2, (TaskFunc) weaponTask, 0);
         re4_log("run: weapon %d asked for (RE4_TEST_WEAPON) at frame %u%s", g_weaponNo, n,
                 g_weaponLv < 0 ? ", endless ammo on" : "");
+    } else if (g_weapon2After >= 0 && g_weaponAt >= 0 && g_freeAt >= 0 && (long) n >= g_freeAt + g_weapon2After &&
+               g->Rno0 == 3 && live(pPL) && TaskStatus(2) == 0) {
+        g_weaponNo = g_weapon2No;
+        g_weaponType = 0;
+        g_weapon2After = -1;
+        TaskExec(2, (TaskFunc) weaponTask, 0);
+        re4_log("run: weapon %d asked for (RE4_TEST_WEAPON_THEN) at frame %u", g_weaponNo, n);
     }
     if (g_weaponAt >= 0 && (long) n > g_weaponAt && g_weaponLines < 3000 && live(pPL) && g->Rno0 == 3) {
         g_weaponLines++;
@@ -2933,6 +2944,15 @@ void configure()
         if (g_weaponNo < 0) {
             g_weaponAfter = -1;
             re4_log("run: RE4_TEST_WEAPON \"%s\" not understood (free+N:W[,T][,stop=S][,lv=L])", weapon);
+        }
+    }
+    const char* weapon2 = getenv("RE4_TEST_WEAPON_THEN");
+    if (weapon2 && strncmp(weapon2, "free+", 5) == 0) {
+        char* end = 0;
+        g_weapon2After = strtol(weapon2 + 5, &end, 10);
+        g_weapon2No = end && *end == ':' ? (int) strtol(end + 1, &end, 0) : -1;
+        if (g_weapon2No < 0) {
+            g_weapon2After = -1;
         }
     }
     const char* yes = getenv("RE4_TEST_CARD_YES");

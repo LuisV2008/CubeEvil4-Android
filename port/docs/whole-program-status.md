@@ -952,6 +952,114 @@ Gegenständen / Gegnerbereichen (Selbsttest an r100, r20b), beschädigter Raum, 
 lose), `Rel/`-Modul, `etc/SizeTbl.dat`, Filmsequenz mit geändertem Bild, US-Discs. Nicht geprüft: Gerät,
 geöffnete Dokumentseite, Speicherkarten-Texte nach dem Umschalten (erst beim nächsten App-Start).
 
+## 1.1.7 (ab 27.11.2026, auf 1.1.6 = 01395be0)
+
+Version 1.1.7 (versionCode 131), weiter auf Branch `workthread-116` (Worktree `RE4-wt116`, WSL `~/re4-wt116`), Releasetext
+`port/android-decomp/docs/releases/v1.1.7.md`. 1.1.6 ist veröffentlicht (origin/master = Tag 1.1.6 = 01395be0); Release und Tag macht
+der Projektinhaber auf GitHub.
+
+### 1. Absturz „Bewegen und Zielen“ nach Waffenwechsel (Nutzerberichte moto g53 5G und Poco F6, 1.1.6, arm64)
+
+- **Bild:** SIGSEGV in `HermiteInterpolation` (Adresse 0x3c8 / 0x4b8) aus `MotionMoveCore` aus `re4_move_aim_legs`
+  (`evalLayer`, die Gehschicht). Beim moto vorher: Pistole (wep03) mit Bewegen und Zielen gegangen, Scharfschützengewehr
+  (wep10) mit Zielfernrohr (dabei keine Beine), zurück zur Pistole, durch eine Tür, zielen und gehen: Absturz.
+- **Ursache:** Alle Waffendateien (`em/wepNN.drs`) laden an dieselbe Stelle (0x80904000). Ein Bewegungsdatensatz hat
+  Schlüssel-Offsets, die `MotionSetCore` beim ersten Abspielen an Ort und Stelle in Zeiger umrechnet. Nach dem Wechsel
+  zurück lag die Pistolendatei frisch von der Disc (rohe Offsets) an derselben Adresse; die Schicht verglich nur die
+  Adresse (`data != L.data`), richtete sich nicht neu ein und las einen Offset als Zeiger.
+- **Behebung** (`runtime/move_aim_legs.cpp`): `resetLayers` (Ende jedes Zielens) vergisst die Bewegung der Schichten;
+  `layerReady` prüft jedes Bild (auch beim Ausblenden), dass die Bewegung noch die der Tabelle des Spielers ist und ihre
+  Schlüsseltabelle umgerechnet ist (`keysReady`: dieselbe Prüfung wie das Spiel, Wort < 0), sonst neu einrichten; geht
+  das nicht, spielt die Schicht nicht (die Beine wie das Spiel sie hat). Logzeile „fresh from the disc (raw keys)“.
+- **Geprüft am PC** (r100, Debug-Disc, neuer Schalter `RE4_TEST_WEAPON_THEN="free+N:W"` für einen zweiten Waffenwechsel,
+  `RE4_TEST_MOVE_AIM` mit mehreren Fenstern „;“): Pistole gehen, Waffe 3, zurück zu 2, zielen und gehen: alter Stand
+  01395be0 SIGSEGV an 0x4b8 (wie der moto), neuer Stand ohne Absturz, Gehschicht neu eingerichtet. Skript `117-oldnew.sh`,
+  Matrix `117-matrix.sh` (Messer, Nachladen, Drehungen, alle Waffen, Ada/HUNK/Krauser/Wesker, Waffenwechsel beim Gehen).
+
+### 2. Absturz am Abspann-Film mit Schätzen auf der Minikarte (Nutzerbericht Poco F6, 1.1.6)
+
+- **Bild:** SIGSEGV in `sceAtGetOtAddr` an 0x92121212, aufgerufen aus `minimap.cpp` (`buildPickups`, Frame-Hook in
+  PADRead), gleich nach „movie/ending.sfd started“ in r333. Nicht Bewegen und Zielen (der Nutzer nannte es, sein früherer
+  Absturz um 07:34 war aber Punkt 1).
+- **Ursache:** Die Minikarte (1.1.6, „Schätze und Items“) ging alle 5 Bilder mit der Spielfunktion `sceAtGetOtAddr`
+  durch die Bereichsliste des Raums. Der Film legt seinen Speicher über die Raumdaten; ein Listenwort 0x12121212 führte
+  die Spielfunktion nach 0x92121212 (nicht gemappt).
+- **Behebung** (`runtime/minimap.cpp`): eigener Gang `nextArea`, der jedes Wort nur aus vorhandenem Speicher liest
+  (`live`, ausgerichtet), höchstens 4096 Schritte, Ende bei Müll. Neuer Kerntest „minimap walk“ (`tests/core_tests.cpp`:
+  zwei Einträge, dann 0x12121212 → zwei gefunden; Listenende, Tabellenwort, Schleife, schiefe Adresse).
+- Den Abspann selbst am PC nicht durchgespielt (r333-Ende); der Gang ist durch den Kerntest abgedeckt.
+
+### 3. Koffer und Händler stürzen im Schloss mit Ashley ab (Nutzerbericht Redmi 15, 1.1.6, ohne Fehlerprotokoll)
+
+- **Nicht nachgestellt.** Ein Untermenü (Koffer, Händler, Akten) lagert 3 MB Spielspeicher ab `pStFnt` (PC 0x80a87d20)
+  ins ARAM aus (`SubScreenOpen`, `STA_SUB_SCRN` vorher an, nach dem Zurücktauschen aus); die Raumdatei liegt oft darin
+  (moto-Bericht: r205.das ab 0x80ad70e0). Die Minikarte (Umriss seit 0.98.2, Schätze und Items seit 1.1.6) las im
+  Frame-Hook weiter den Raum, auch bei offenem Untermenü.
+- **Vorsorge** (`runtime/minimap.cpp`): bei `STA_SUB_SCRN` liest die Minikarte nichts (die letzten Listen bleiben),
+  die Schätze auch nicht während `STA_EVENT` (Ereignisse tauschen ebenfalls Speicher).
+- **Geprüft am PC** (i686, Skripte `117-subscr.sh`, `117-subscr-all.sh`): r200..r21b (26 Räume frei, r206/r215 ohne
+  freien Spieler im Debug-Start; Ashley in den Debug-Starts r203, r208, r210, r212, r219), Koffer und Händler offen, mit
+  Minikarten-Schätzen, Stapeln 999, Schnellfeuer, XL-Koffer, Kräutermischungen und Munition im Koffer: Debug-Disc und
+  EU-Discs ohne Absturz, auch vor der Vorsorge. Auf dem PC liegen die Gegenstandsbereiche (ITM, r205 0x80ee1a40) hinter
+  dem ausgelagerten Bereich.
+- **Nachtrag:** Der Nutzer hatte „Schätze und Items“ aus, ein Protokoll kommt nicht. Die Minikarten-Vorsorge bleibt
+  (richtig und harmlos), ist aber nicht die Ursache. Weitere PC-Läufe ohne Absturz: die Rüstungsräume (em2d: r205, r213)
+  mit Ashley (`RE4_TEST_STA=101`, 32 von 32 Läufen mit `em/pl11.drs`), Koffer und Händler, Minikarte aus und an, 32 und
+  64 bit (neuer PC-Kern x86_64), Debug- und EU-Discs; alle Schlossräume mit Ashley auf 64 bit, EU, Minikarte aus (26
+  frei). Skript `117-armor.sh`. Der Kern ist damit am PC ausgeschlossen, soweit er sich hier zeigt.
+- **Grafik-Seite (Redmi 15 = Adreno 610, „glitch, then crash“ in beiden Untermenüs):** Der GLES-Renderer (Standard)
+  fragte nie nach GL-Fehlern; ein Treiber ohne Speicher lässt erst Hochladungen scheitern (falsches Bild) und stürzt
+  später ab. **Neu** (`app/src/main/cpp/gx_gl.cpp`, `WatchErrors`): jedes 30. Bild `glGetError`; bei
+  `GL_OUT_OF_MEMORY` eine Zeile „GX: the GL driver is out of memory …“ mit Spieltexturen, HD-/Schärfer-Text-Bytes und
+  Programmen, dann gibt der Renderer die Spieltexturen frei (der Kern schickt sie neu, wie bei einem Paketwechsel,
+  `TakeTexturesDropped`) und halbiert die Programmgrenze (Binärdateien laden wieder); höchstens alle 300 Bilder.
+  Andere GL-Fehler: die ersten fünf als Zeile. Ohne Fehlermeldung des Treibers ändert sich nichts. PC-Schalter
+  `RE4_GX_TEST_OOM=N`: geprüft mit `gx_chunk_render` (llvmpipe): Zeile kommt, kein Absturz, Bild gleich.
+- **Was ein künftiger Bericht klären würde:** `crash.txt` (Kern oder `libGLESv2_adreno`/`libre4decomp`), im
+  `core-log` „GX: the GL driver is out of memory“ / „GX: GL error“, „run: sub screen open“, der Raum, die GX-Zeilen
+  (Programme, Texturen) davor, „DVD: language pack … reads N files“, „cheat:“-Zeilen.
+
+### 4. Waffen-Schnellwechsel (Wunsch des Projektinhabers, OK 28.11.2026 „Ja, passt so“)
+
+- **Kern** (`runtime/quick_weapon.cpp`): die Waffen des Koffers in seiner Lesereihenfolge (`cItem::y`, dann `x`; nur
+  `board` 1), Tabelle der Waffen aus `wep_info` ohne Messer (0x38), leere Hände (0x800) und Eier; Granaten (0x01, 0x02,
+  0x0E) nur mit „Granaten mit durchschalten“. Der Wechsel ist der des Spiels nach dem Koffer (`SubScreenExit` Schritt 4:
+  `ItemMgr.arm`, `SndBlkStop(2)`, `weaponRelease`/`weaponLoad`/`weaponInit`, `bullet_type`) als Task (Priorität 2, wie
+  der Waffenwechsel des Debug-Werkzeugs), nur wo das Spiel den Koffer öffnen würde (`SubScreenCall`-Prüfungen,
+  `subScrCheck`), nicht als Ashley, nicht beim Zielen/Messer/eigenen Bewegungen, eins nach dem anderen.
+- **Eingaben:** Steuerkreuz links/rechts (neuer Filter in `pad.cpp` `re4_pad_button_filter`: bei eingeschaltetem
+  Wechsel und Spielen ohne Zielen nimmt er dem Spiel links/rechts, ein Druck ist ein Wechsel; beim Zielen bleiben sie
+  dem Spiel), Mausrad außerhalb von Zielfernrohr/Fernglas (`wheel_zoom.cpp`), Finger auf der Lebensanzeige (die
+  Zieh-Ereignisse aus `menu_touch.cpp`: Tippen = nächste, Wischen links = nächste, rechts = vorige; die rechte untere
+  Ecke des gezeigten Bildes, `picture.cpp re4_hud_corner_rows`; ein solches Wischen ist kein Messerhieb). App:
+  `re4_core_quick_weapon` (auch per IPC, `kQuickWeapon` 56), Tasten 1–9 (wenn die Belegung sie nicht nutzt),
+  belegbare Aktionen „Nächste Waffe“/„Vorige Waffe“ (`ActionMap` 20/21, ohne Taste), Anzeige `QuickWeaponLabel` über
+  der Lebensanzeige (englischer Name, Platz/Anzahl, 1,5 s), Menüzeile unter „Sanftere QTEs | Schnellfeuer“, 11 Sprachen.
+- **Geprüft am PC** (i686 und x86_64, Skripte `117-qw.sh`, `117-qw-all.sh`): jede Waffe gewechselt, gezielt und
+  geschossen (Pistolen, Red9, Punisher, Blacktail, Matilda, Broken Butterfly, Killer7, Handcannon, Schrotflinten,
+  Gewehre, TMP, Chicago Typewriter, Minenwerfer, Raketenwerfer, Bogen, drei Granaten); Ada, HUNK, Krauser, Wesker;
+  Mercenaries mit allen Figuren; mit Schnellfeuer, Lebensbalken und Bewegen und Zielen (Beine frisch eingerichtet);
+  Steuerkreuz, Anfragen, Tippen/Wischen auch beim Gehen. 0 Abstürze. Neue PC-Schalter `RE4_QUICK_WEAPON`,
+  `RE4_TEST_QUICK_WEAPON`, `RE4_TEST_QUICK_TOUCH`. Bilder `builds/workthread-1.1.7/quick-weapon`.
+- **Anzeige links neben der Lebensanzeige** (Wunsch des Projektinhabers, OK 28.11.2026 „Ja, passt so“): unten auf der
+  unteren Linie der Lebens-/Munitionsanzeige, rechts mit 1,5 % der Bildhöhe Abstand zum Ring. Der Kern meldet, wo er den
+  Ring zeichnet (`picture.cpp re4_hud_gauge_box`, festgehalten in `re4_hud_scrn` beim Zeichnen, also auch breit/„Native“,
+  „Gestreckt“, „4:3 (GC)“ und mit Ashleys Ring; linker Rand des Rings 49 Einheiten links vom Anker, `kRingLeft`), über
+  `re4_core_quick_weapon` info[2]/info[3] (IPC-Antwort jetzt 56 Bytes); die App rechnet das in Bildschirmpunkte um
+  (`CoreBridge.quickWeaponState` out[7]/out[8]). Farbe die des Namens „Leon“, wie das Spiel ihn zeichnet (150, 150, 136,
+  in r100 und r205 gleich), Schrift fett kursiv mit Serifen, Größe 4,2 % der Bildhöhe, schwach dunkle Platte; weicht
+  gezeigten Touch-Tasten nach links aus (`TouchControls.shownControls`, `QuickWeaponLabel.avoid`). Am PC geprüft
+  (Skript `117-label.sh`: 16:9, 20:9, mit Ashley; gemeldete und gezeichnete Lage gleich), Bilder
+  `builds/workthread-1.1.7/quick-weapon/quick-weapon-label-left*.png`.
+- **Nicht auf einem Gerät geprüft:** wie lange Leon beim Laden der Waffendatei ohne Waffe ist; die Lage der Anzeige in
+  jedem Bildformat.
+
+### 5. „Input lag“ mit den EU-Discs (Infinix X6882): nicht echt
+
+Gleicher Spielcode für alle Discs (immer der des Debug-Builds), die EU-Schalter betreffen nur Texte, Menüs und
+Bildschirme; am PC (r100) reagieren Debug- und EU-Discs gleich (Zielen 1 Bild, Gehen 3 Bilder nach dem Druck, Skript
+`117-lag.sh`); in seinen Berichten wartet ein Druck mit EU nicht länger (16,4/13,7 ms gegen 16,9/25,1 ms).
+
 ## 1.1.6 (ab 26.11.2026, auf 1.1.5 = 219acfda)
 
 Version 1.1.6 (versionCode 130), Branch `workthread-116` (Worktree `RE4-wt116`, WSL `~/re4-wt116`), Releasetext

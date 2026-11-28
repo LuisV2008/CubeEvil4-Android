@@ -59,7 +59,9 @@ public class MapPageShotTest {
             body.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
             body.layout(0, 0, width, body.getMeasuredHeight());
-            int height = Math.min(body.getMeasuredHeight(), 900);
+            // (1.1.7) RE4_MENU_SHOTS_FULL=1: the whole page (the actions at its end)
+            int height = "1".equals(System.getenv("RE4_MENU_SHOTS_FULL")) ? body.getMeasuredHeight()
+                : Math.min(body.getMeasuredHeight(), 900);
             Bitmap picture = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(picture);
             canvas.drawColor(0xff191f1c);
