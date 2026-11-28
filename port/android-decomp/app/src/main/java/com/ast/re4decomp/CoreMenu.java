@@ -1477,6 +1477,9 @@ final class CoreMenu extends Dialog {
     // "Rapid fire" beside it (1.1.6, wish of the project owner: every playable character's guns twice as fast), off
     toggle(lastRow, R.string.ingame_rapid_fire, input.getBoolean(CoreActivity.RAPID_FIRE, false),
         on -> host.rapidFireChanged(on));
+    // back execution (modification), read at the game's start
+    toggle(lastRow, R.string.ingame_back_execution, graphics.getBoolean("backExecution", false),
+        on -> graphics.edit().putBoolean("backExecution", on).apply());
     help(R.string.ingame_alternate_help); help(R.string.ingame_latch_help); help(R.string.ingame_auto_aim_help);
     help(R.string.ingame_always_run_help); help(R.string.ingame_gentle_qte_help); help(R.string.ingame_rapid_fire_help);
     help(R.string.ingame_aim_help);

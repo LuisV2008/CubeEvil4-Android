@@ -667,4 +667,5 @@
     <string name="ingame_lang_bad_zip">The ZIP file cannot be read (damaged, encrypted or packed another way). Unpack it on a PC and import the folder.</string>
     <string name="ingame_lang_read_failed">The pack could not be read: %1$s</string>
     <string name="ingame_custom_music">Custom music (restart)</string>
+    <string name="ingame_back_execution">Back execution (restart)</string>
 </resources>
