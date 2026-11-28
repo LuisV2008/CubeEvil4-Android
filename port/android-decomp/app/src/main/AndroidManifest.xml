@@ -30,6 +30,8 @@
         <activity android:name=".StartupActivity" android:exported="false" android:screenOrientation="sensorLandscape"
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity android:name=".RoomCheckActivity" android:exported="false" />
+        <activity android:name=".MusicActivity" android:exported="false"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|density" />
         <!-- locale|layoutDirection: a new language (the phone's or the app's own) keeps the running
              game; the menu takes it the next time it opens -->
         <!-- uiMode: a car switches day / night with its lights (and phones with their dark-mode schedule),

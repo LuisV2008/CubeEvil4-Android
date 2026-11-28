@@ -63,6 +63,8 @@ public final class MainActivity extends Activity implements ImportManager.Listen
       centered(body, getString(R.string.core_notice), 12, false, dp(2));
       line(body, dp(10));
       start = button(body, getString(R.string.core_start), this::startOriginalTitle);
+      // custom music (a modification, MusicActivity)
+      button(body, "Mi música", () -> { if (!imports.busy) startActivity(new Intent(this, MusicActivity.class)); });
       // the flavour sideload (1.0, DataFolder): where the data go, before the discs are imported
       if (DataFolder.enabled) dataFolderSection(body);
       heading(body, getString(R.string.core_import_heading));
