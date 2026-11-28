@@ -1,0 +1,12 @@
+# Port patch, "First person" (1.1.8, runtime/first_person.cpp; app menu, Cheats & Mods, off by default).
+# The shoulder camera sits at Leon's eyes and keeps its viewing direction (CameraQuasiFPS::move).
+--- a/src/game/cam_qfps.cpp	2026-11-28 13:55:29.159488256 -0500
++++ b/src/game/cam_qfps.cpp	2026-11-28 13:55:29.323488256 -0500
+@@ -21,2 +21,3 @@
+ #include "pl_npc.h"
++extern "C" void re4_first_person(Vec* campos, Vec* target); /* port: runtime/first_person.cpp */
+ 
+@@ -1245,2 +1246,3 @@
+     PSMTXMultVec(m, &target_aim_eff, &c.param.Target);
++    re4_first_person(&c.param.Campos, &c.param.Target); /* port: "First person" */
+     c.param.Roll = 0.0f;

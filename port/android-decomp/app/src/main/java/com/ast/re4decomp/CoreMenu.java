@@ -178,6 +178,8 @@ final class CoreMenu extends Dialog {
     void merchantChanged(boolean weapons, boolean on);
     /** The cheat "Bloody mode" (1.1.3, ENEMIES AND WORLD; CoreActivity.BLOODY holds it). */
     void bloodyChanged(boolean on);
+    /** "First person" (1.1.8). */
+    void firstPersonChanged(boolean on);
     /** "More enemies" (1.1.0, ENEMIES AND WORLD): a new seed each time it goes on, 0 off (CoreActivity.MORE_ENEMIES). */
     void moreEnemiesChanged(int seed);
     /** "Photo mode" switched on and photo mode not on yet: the header's button starts it (1.1.0, the way on touch). */
@@ -2367,11 +2369,14 @@ final class CoreMenu extends Dialog {
     MenuLayout.Buttons blood = cheatRow(advanced);
     toggle(blood, R.string.ingame_cheat_bloody, game.getBoolean(CoreActivity.BLOODY, false),
         on -> host.bloodyChanged(on));
+    toggle(blood, R.string.ingame_first_person, game.getBoolean(CoreActivity.FIRSTPERSON, false),
+        on -> host.firstPersonChanged(on));
     help(R.string.ingame_cheat_random_items_help);
     help(R.string.ingame_cheat_random_enemies_help);
     help(R.string.ingame_health_bars_help);
     help(R.string.ingame_more_enemies_help);
     help(R.string.ingame_cheat_bloody_help);
+    help(R.string.ingame_first_person_help);
     help(R.string.ingame_cheats_help);
     playerCharacter();
     mods();

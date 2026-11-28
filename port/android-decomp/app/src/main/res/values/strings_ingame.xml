@@ -672,4 +672,6 @@
     <string name="ingame_quick_weapon_help">Quick weapon switch: change the weapon without opening the case, in the case\'s order (top left to bottom right); the knife keeps its own button. Controller: D-pad left and right (not while aiming; the stick still walks and turns) or the keys you map to \"Next Weapon\" and \"Previous Weapon\". Keyboard: 1 to 9 pick a weapon, the mouse wheel goes through them (outside the scope). Touch: a tap on the round life gauge picks the next weapon, a swipe on it to the left the next, to the right the previous. Grenades in the cycle: the grenades too.</string>
     <string name="ingame_act_next_weapon">Next Weapon</string>
     <string name="ingame_act_prev_weapon">Previous Weapon</string>
+    <string name="ingame_first_person">First person</string>
+    <string name="ingame_first_person_help">First person: the camera sits at Leon's eyes while you walk and aim. Experimental: the head may show or clip. Cutscenes are unchanged.</string>
 </resources>

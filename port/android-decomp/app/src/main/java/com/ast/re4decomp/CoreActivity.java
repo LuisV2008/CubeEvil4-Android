@@ -259,6 +259,8 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
   }
   /** The cheat "Bloody mode" (1.1.3, GAME_PREFS; CoreBridge.setBloody, patch 0258): off by default. */
   static final String BLOODY = "bloodyMode";
+  /** "First person" (1.1.8, GAME_PREFS): off by default. */
+  static final String FIRSTPERSON = "firstPersonMode";
   /** "More enemies" (1.1.0, GAME_PREFS; CoreBridge.setMoreEnemies): its seed, 0 off. */
   static final String MORE_ENEMIES = "moreEnemiesSeed";
   private static final int REQUEST_EXPORT_ALL = 2, REQUEST_IMPORT = 3, REQUEST_REPORT = 4, REQUEST_TEXTURES = 5,
@@ -712,6 +714,7 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
       boolean bloody = getSharedPreferences(GAME_PREFS, MODE_PRIVATE).getBoolean(BLOODY, false);
       if (bloody) Log.i(TAG, "cheats: bloody mode on");
       CoreBridge.setBloody(bloody);
+      CoreBridge.setFirstPerson(getSharedPreferences(GAME_PREFS, MODE_PRIVATE).getBoolean(FIRSTPERSON, false));
       int merchant = merchantBits(getSharedPreferences(GAME_PREFS, MODE_PRIVATE));
       if (merchant != 0) Log.i(TAG, "cheats: merchant bits " + merchant);
       CoreBridge.setMerchantAll(merchant);
@@ -1622,6 +1625,12 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
       g.edit().putBoolean(weapons ? MERCHANT_WEAPONS : MERCHANT_TUNES, on).apply();
       Log.i(TAG, "cheats: all " + (weapons ? "weapons" : "tune-ups") + " at the merchant " + (on ? "on" : "off"));
       CoreBridge.setMerchantAll(merchantBits(g));
+    }
+
+    @Override public void firstPersonChanged(boolean on) {
+      getSharedPreferences(GAME_PREFS, MODE_PRIVATE).edit().putBoolean(FIRSTPERSON, on).apply();
+      Log.i(TAG, "cheats: first person " + (on ? "on" : "off"));
+      CoreBridge.setFirstPerson(on);
     }
 
     @Override public void bloodyChanged(boolean on) {

@@ -1168,6 +1168,8 @@ std::atomic<int> optStackItems{0};
 std::atomic<int> optBloody{0};
 // "Rapid fire" (CoreBridge.setRapidFire, 1.1.6, Controls): bit 30 of the aim bits (runtime/rapid_fire.cpp, patch 0263)
 std::atomic<int> optRapidFire{0};
+// "First person" (CoreBridge.setFirstPerson, 1.1.8): bit 31 of the aim bits (runtime/first_person.cpp)
+std::atomic<int> optFirstPerson{0};
 // the cheats "All weapons" / "All tune-ups at the merchant" (CoreBridge.setMerchantAll, 1.1.3): bits 6/7 of the aim bits
 // (runtime/cheats.cpp re4_merchant_all, patch 0259)
 std::atomic<int> optMerchant{0};
@@ -2924,7 +2926,7 @@ bool drawGx() {
                     | (optHealthBars.load() ? 1 << 20 : 0)            // bit 20 the enemy health bars (1.1.0)
                     | (optStackItems.load() & 3) << 21                 // bits 21..22 the cheat "Stack items" (1.1.0)
                     | (optBloody.load() ? 1 << 23 : 0)                 // bit 23 the cheat "Bloody mode" (1.1.3)
-                    | (optRapidFire.load() ? 1 << 30 : 0)              // bit 30 "Rapid fire" (1.1.6)
+                    | (optRapidFire.load() ? 1 << 30 : 0) | (optFirstPerson.load() ? (int) 0x80000000u : 0)              // bit 30 "Rapid fire" (1.1.6)
                     | (optMerchant.load() & 3) << 6                    // bits 6/7 the merchant cheats (1.1.3)
                     | (optFov.load() + 32) << 24;                     // bits 24.. "Field of view" (patch 0205)
     if (api.setAim && aim != aimSent) {
@@ -4136,6 +4138,12 @@ extern "C" JNIEXPORT void JNICALL Java_com_ast_re4decomp_CoreBridge_setMinimapPi
 }
 
 // "Rapid fire" (1.1.6, Controls): drawGx tells the core (bit 30 of the aim bits, patch 0263).
+// "First person" (1.1.8, Cheats & Mods): bit 31 of the aim bits.
+extern "C" JNIEXPORT void JNICALL Java_com_ast_re4decomp_CoreBridge_setFirstPerson(JNIEnv *, jclass, jboolean on) {
+  const int want = on == JNI_TRUE ? 1 : 0;
+  if (optFirstPerson.exchange(want) != want) LOG("first person: %s (the menu)", want ? "on" : "off");
+}
+
 extern "C" JNIEXPORT void JNICALL Java_com_ast_re4decomp_CoreBridge_setRapidFire(JNIEnv *, jclass, jboolean on) {
   const int want = on == JNI_TRUE ? 1 : 0;
   if (optRapidFire.exchange(want) != want) LOG("rapid fire: %s (the menu)", want ? "on" : "off");

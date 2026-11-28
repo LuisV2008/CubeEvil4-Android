@@ -146,6 +146,8 @@ public final class CoreBridge {
   /** The cheat "Bloody mode" (1.1.3, Cheats & Mods): blood pools on the floor stay until the room changes (patch 0258,
    *  runtime/bloody.cpp). */
   public static native void setBloody(boolean on);
+  /** "First person" (1.1.8, Cheats & Mods; runtime/first_person.cpp). */
+  public static native void setFirstPerson(boolean on);
   /** "Rapid fire" (1.1.6, Controls): the guns of every playable character fire twice as fast (patch 0263,
    *  runtime/rapid_fire.cpp). */
   public static native void setRapidFire(boolean on);
