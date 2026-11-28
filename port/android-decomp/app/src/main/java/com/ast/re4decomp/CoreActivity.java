@@ -478,10 +478,6 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
       coreSettings += ";RE4_SKIP_INTRO=1";
       Log.i(TAG, "skip intro: on (the game's logos before the title menu are left out)");
     }
-    // back execution (modification): shooting a Ganado from behind kills it, from the next start
-    if (getSharedPreferences(GRAPHICS_PREFS, MODE_PRIVATE).getBoolean("backExecution", false)) {
-      coreSettings += ";RE4_EXECUTION=1";
-    }
     // custom music (modification): files in <app folder>/music replace the disc's, from the next start
     if (getSharedPreferences(GRAPHICS_PREFS, MODE_PRIVATE).getBoolean("customMusic", false)) {
       File music = new File(AppStorage.base(this), "music");

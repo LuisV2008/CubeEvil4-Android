@@ -243,7 +243,7 @@ static void plem10DmGondolaShake(cPlayer* pl);
 static void subem10DmGondolaShake(cSubChar* sub);
 static void plemDmMStar(cPlayer* pl);
 static void plemDmStun(cPlayer* pl);
-static void em10KickAction(cEm10* em); static void em10ExecCk(cEm10* em);
+static void em10KickAction(cEm10* em);
 static void em10KneeDownAction(cEm10* em);
 static void plem10Kick(cPlayer* pl);
 static void plem10Kick2(cPlayer* pl);
@@ -3441,7 +3441,7 @@ static void em10_R0_Init(cEm10* em)
 static void em10_R0_Move(cEm10* em)
 {
     Em10_R1_move_tbl[em->r_no_1 * 2](em);
-    Em10_R1_move_tbl[em->r_no_1 * 2 + 1](em); em10ExecCk(em);
+    Em10_R1_move_tbl[em->r_no_1 * 2 + 1](em);
 }
 
 // Branch check of the routines that have none (most Em10_R1_move_tbl entries): empty in the original too.
@@ -27523,109 +27523,3 @@ void em10SetPoint(cEm10* em)
 // The original em10.cpp object has an 8-aligned .data (the split object's sh_addralign); the size is already
 // a multiple of 8, so this only raises the section alignment (the REL places .data at +0x460D0, not +0x460CC).
 asm(".section .data\n\t.balign 8\n\t.text");
-
-// Modification, "back execution" (app option, RE4_EXECUTION=1): Leon aiming a handgun at an ordinary Ganado
-// from behind and close is offered an action; the fire button then shoots and kills it at once.
-extern "C" char* getenv(const char* name);
-
-static int em10ExecOn()
-{
-    static int on = -1;
-
-    if (on < 0) {
-        const char* v = getenv("RE4_EXECUTION");
-
-        on = v != 0 && v[0] == '1';
-    }
-    return on;
-}
-
-// The prompt's callback: Leon fires (one round, by the handgun's own fire state) and the Ganado dies the
-// way of a killing head shot. dmg.set keeps the bullet itself from hitting it a second time.
-static void em10ExecAction(cEm10* em)
-{
-    if (em->hp <= 0) {
-        return;
-    }
-    pPL->r_no_0 = 0;
-    pPL->r_no_1 = 6;
-    pPL->r_no_2 = 2;
-    pPL->r_no_3 = 0;
-    em->hp = 0;
-    em->dmg.set(0, 0x1E);
-    em->dmg.m_PosFrom = pPL->pos;
-    EmSetDie(em);
-    EmReserveDropItem(em);
-    em10SetPoint(em);
-    GameAddPoint(LVADD_CRITICALHIT);
-    em10LostHead(em, 0, 0);
-    em->setRno(2, 4, 0, 0);
-}
-
-// Offers it, every frame of a walking / standing Ganado.
-static void em10ExecCk(cEm10* em)
-{
-    FREE_EM10* w = EM10_WK(em);
-    Vec a;
-    Vec b;
-
-    if (!em10ExecOn() || em->hp <= 0 || em->r_no_0 != 1) {
-        return;
-    }
-    // Leon, alive, holding a handgun up (aim state), with a round in it
-    if (pG->pl_type != 0 || pPL->hp <= 0 || pPL->r_no_0 != 0 || pPL->r_no_1 != 6 || pPL->r_no_2 != 1) {
-        return;
-    }
-    switch (pG->weapon_no) {
-    case 1:
-    case 2:
-    case 4:
-    case 5:
-    case 6:
-    case 15:
-    case 38:
-    case 43:
-    case 44:
-        break;
-    default:
-        return;
-    }
-    if (!WEP_OBJ(pPL)->bulletNum()) {
-        return;
-    }
-    // ordinary Ganados only: not the special types, chainsaws, parasites, riders or those down / climbing
-    if (em->type == 10 || em->type == 13 || em->type == 2 || em->type == 6 || em->type == 0x16) {
-        return;
-    }
-    if (w->Wep_type == 4 || w->pCore || w->pParasite || w->pTruck || w->pDrill || w->pGatling) {
-        return;
-    }
-    if (w->Be_flg & (0x8 | 0x10 | 0x80 | 0x4000 | 0x10000 | 0x20000 | 0x100000 | 0x10000000 | 0x40000000)) {
-        return;
-    }
-    // within 2.5 m, same floor, Leon facing it and standing behind it (60 deg to each side of its back)
-    if (em->l_pl > 6250000.0f || fabsf(em->pos.y - pPL->pos.y) > 700.0f) {
-        return;
-    }
-    if (fabsf(Muku(&pPL->pos, &em->pos, pPL->ang.y, 3.1415927f)) > 0.6f) {
-        return;
-    }
-    if (fabsf(Muku(&em->pos, &pPL->pos, em->ang.y, 3.1415927f)) < 2.0943952f) {
-        return;
-    }
-    a = em->pos;
-    b = pPL->pos;
-    a.y += 1500.0f;
-    b.y += 1500.0f;
-    if (SatMgr.hitCheck(&a, &b, 0, 0, 0, 0)) {
-        return;
-    }
-    a = em->pos;
-    b = pPL->pos;
-    a.y += 1500.0f;
-    b.y += 1500.0f;
-    if (EatMgr.hitCheck(&a, &b, 0, 0, 0, 0)) {
-        return;
-    }
-    ActBtn.set(ACT_EXECUTE, 0xB, (void*) em10ExecAction, em, ACTCTR_WEP_SET_IGNORE, DISP_A_NORMAL, ACT_FUNC_NORMAL, 0);
-}
