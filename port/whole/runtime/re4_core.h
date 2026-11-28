@@ -340,6 +340,11 @@ int re4_core_room_outline(float* out, int maxEdges, unsigned* info);
  * | 8 hidden in a closed chest, a crate or (| 16) an enemy); info[0] rises with every new list (every 5th frame),
  * info[1] is its room. Returns the count. The first call makes the game list them. */
 int re4_core_room_pickups(float* out, int max, unsigned* info);
+/* "Quick weapon switch" (cores since 1.1.7, runtime/quick_weapon.cpp): how 0x40000000 | on | grenades << 1 the menu's
+ * switches; +1 / -1 the next / previous weapon of the case, 101..109 its 1st..9th; 0 asks only. Returns the switches done
+ * so far; the last one's English weapon name into `name` (`size` bytes) and info[0] its place, info[1] the count of
+ * the case's weapons. The D-pad, the wheel and a finger on the life gauge go in the core. Any thread. */
+int re4_core_quick_weapon(int how, char* name, int size, int* info);
 /* The laser sight's colour (cores since 04.11.2026, patch 0198, runtime/laser_colour.cpp): 0 the game's red,
  * 1 blue, 2 green, 3 yellow; the beam and the dot. Any thread. */
 void re4_core_set_laser_colour(int colour);

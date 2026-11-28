@@ -646,4 +646,9 @@
     <string name="ingame_lang_no_language">未导入：该语言包没有更改任何文字。</string>
     <string name="ingame_lang_bad_zip">无法读取 ZIP 文件（已损坏、已加密或以其他方式压缩）。请在电脑上解压并导入文件夹。</string>
     <string name="ingame_lang_read_failed">无法读取语言包：%1$s</string>
+    <string name="ingame_quick_weapon">快速切换武器</string>
+    <string name="ingame_quick_weapon_grenades">手雷也参与切换</string>
+    <string name="ingame_quick_weapon_help">快速切换武器：无需打开手提箱即可切换武器，按手提箱中的顺序（从左上到右下）；小刀保留自己的按键。手柄：十字键左右（瞄准时除外；摇杆仍可行走和转身），或你为“下一把武器”和“上一把武器”设置的按键。键盘：1 到 9 直接选择武器，鼠标滚轮依次切换（瞄准镜外）。触屏：点击圆形生命值表选择下一把武器，在其上向左滑动为下一把，向右为上一把。手雷也参与切换：手雷也包括在内。</string>
+    <string name="ingame_act_next_weapon">下一把武器</string>
+    <string name="ingame_act_prev_weapon">上一把武器</string>
 </resources>

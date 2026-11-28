@@ -173,6 +173,9 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
   static final String GENTLE_QTE = "gentleQte";
   /** "Rapid fire" (1.1.6, INPUT_PREFS; CoreBridge.setRapidFire, patch 0263): the guns fire twice as fast; off. */
   static final String RAPID_FIRE = "rapidFire";
+  /** "Quick weapon switch" (1.1.7, INPUT_PREFS; CoreBridge.quickWeapon, runtime/quick_weapon.cpp) and its "Grenades in
+   *  the cycle"; both off. */
+  static final String QUICK_WEAPON = "quickWeapon", QUICK_WEAPON_GRENADES = "quickWeaponGrenades";
   /** "Turn Leon with mouse / look area" (1.0): the movement sideways turns Leon himself (CoreInput.setBodyTurn); off. */
   static final String BODY_TURN = "bodyTurn";
   // "Reload without aiming" (1.1.0, keyboard; INPUT_PREFS): the reload key alone reloads (CoreBridge.quickReload)
@@ -556,6 +559,10 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
     fpsView.setTextDirection(View.TEXT_DIRECTION_LTR);
     root.addView(fpsView, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,
         FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM | Gravity.LEFT));
+    // "Quick weapon switch" (1.1.7): the new weapon's name above the life gauge (QuickWeaponLabel)
+    quickLabel = new QuickWeaponLabel(this);
+    root.addView(quickLabel.view, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,
+        FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.LEFT));
     // kept clear of the screen's rounded corner, a cutout and bars that stay (CornerInset; tester report
     // 05.11.2026: the corner cut the text off); asked again when the window turns or the bars come and go
     fpsView.setOnApplyWindowInsetsListener((v, insets) -> {
@@ -671,6 +678,7 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
       boolean rapid = getSharedPreferences(INPUT_PREFS, MODE_PRIVATE).getBoolean(RAPID_FIRE, false);
       if (rapid) Log.i(TAG, "rapid fire on");
       CoreBridge.setRapidFire(rapid);
+      quickWeaponSend();
       // the cheat switches kept from the last run (a test script's RE4_CHEATS wins)
       int cheats = getSharedPreferences(GAME_PREFS, MODE_PRIVATE).getInt(CHEATS, 0);
       if (!settings.contains("RE4_CHEATS=")) {
@@ -1477,6 +1485,18 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
       getSharedPreferences(INPUT_PREFS, MODE_PRIVATE).edit().putBoolean(GENTLE_QTE, on).apply();
       CoreBridge.setGentleQte(on);
       Log.i(TAG, "gentler QTEs " + (on ? "on: Professional's quick-time events as Normal's" : "off"));
+    }
+
+    @Override public void quickWeaponChanged(boolean on) {
+      getSharedPreferences(INPUT_PREFS, MODE_PRIVATE).edit().putBoolean(QUICK_WEAPON, on).apply();
+      quickWeaponSend();
+      Log.i(TAG, "quick weapon switch " + (on ? "on" : "off"));
+    }
+
+    @Override public void quickWeaponGrenadesChanged(boolean on) {
+      getSharedPreferences(INPUT_PREFS, MODE_PRIVATE).edit().putBoolean(QUICK_WEAPON_GRENADES, on).apply();
+      quickWeaponSend();
+      Log.i(TAG, "quick weapon switch: grenades " + (on ? "in the cycle" : "left out"));
     }
 
     @Override public void rapidFireChanged(boolean on) {
@@ -2808,6 +2828,13 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
       Log.i(TAG, "key " + KeyEvent.keyCodeToString(code) + " (" + code + ") -> app " + what);
     }
     switch (function) {
+      case CoreInput.APP_NEXT_WEAPON:
+      case CoreInput.APP_PREV_WEAPON:
+        // "Quick weapon switch" (1.1.7): the mapped "Next weapon" / "Previous weapon" (the core refuses when off)
+        if (first && down && menu == null && !input.menu()) {
+          CoreBridge.quickWeapon(function == CoreInput.APP_NEXT_WEAPON ? 1 : -1);
+        }
+        return true;
       case CoreInput.APP_MENU:
         // pressed: the menu when let go; held for a second: the game's debug menu
         if (first) {
@@ -2831,6 +2858,7 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
       if (e.getAction() != KeyEvent.ACTION_DOWN && e.getAction() != KeyEvent.ACTION_UP) return true;
       if (e.getRepeatCount() > 0) return true;
       if (down) heldKeyboardKeys.add(code); else heldKeyboardKeys.remove(code);
+      if (quickWeaponKey(code, down, e.getRepeatCount())) return true;  // "Quick weapon switch": 1..9 (1.1.7)
       if (down) quickReloadKey(code);  // "Reload without aiming" (1.1.0)
       boolean taken = input.keyboardKey(e.getDeviceId(), code, down);
       if (taken || code == KeyEvent.KEYCODE_ESCAPE) {
@@ -3362,6 +3390,49 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
   private float mouseSensitivity = 1f;
   private int mouseButtons;  // the captured mouse's buttons held (MotionEvent.BUTTON_*)
   private boolean quickReload;  // "Reload without aiming" (1.1.0)
+
+  // "Quick weapon switch" (1.1.7, wish of the project owner, 28.11.2026; runtime/quick_weapon.cpp)
+  private boolean quickWeapon;
+  private QuickWeaponLabel quickLabel;
+  private final int[] quickState = new int[7];
+
+  /** The menu's switches to the core, and the label's watch on or off. */
+  private void quickWeaponSend() {
+    SharedPreferences p = getSharedPreferences(INPUT_PREFS, MODE_PRIVATE);
+    quickWeapon = p.getBoolean(QUICK_WEAPON, false);
+    boolean grenades = p.getBoolean(QUICK_WEAPON_GRENADES, false);
+    CoreBridge.quickWeapon(0x40000000 | (quickWeapon ? 1 : 0) | (grenades ? 2 : 0));
+    main.removeCallbacks(quickWatch);
+    if (quickLabel != null) quickLabel.reset();
+    if (quickWeapon) main.postDelayed(quickWatch, QuickWeaponLabel.POLL_MS);
+  }
+
+  /** Every 100 ms while the switch is on: a new switch shows its weapon above the life gauge. */
+  private final Runnable quickWatch = new Runnable() {
+    @Override public void run() {
+      if (!quickWeapon || quickLabel == null) return;
+      String name = CoreBridge.quickWeaponState(quickState);
+      if (name != null && surface != null && surface.getWidth() > 0 && surface.getHeight() > 0) {
+        surface.getLocationInWindow(surfaceAt);
+        float sx = outputW > 0 ? (float) surface.getWidth() / outputW : 1f;
+        float sy = outputH > 0 ? (float) surface.getHeight() / outputH : 1f;
+        quickLabel.update(quickState[0], name, quickState[1], quickState[2], surfaceAt[0] + quickState[3] * sx,
+            surfaceAt[1] + quickState[4] * sy, quickState[5] * sx, quickState[6] * sy);
+      }
+      main.postDelayed(this, QuickWeaponLabel.POLL_MS);
+    }
+  };
+
+  /**
+   * "Quick weapon switch" (1.1.7): the keyboard's 1..9 pick the case's 1st..9th weapon, unless the button mapping uses
+   * the key; not in a game menu or the app's. Returns whether the key was taken.
+   */
+  private boolean quickWeaponKey(int code, boolean down, int repeat) {
+    if (!quickWeapon || code < KeyEvent.KEYCODE_1 || code > KeyEvent.KEYCODE_9) return false;
+    if (menu != null || input.menu() || input.keyboardMap().uses(code)) return false;
+    if (down && repeat == 0) CoreBridge.quickWeapon(100 + code - KeyEvent.KEYCODE_0);
+    return true;
+  }
 
   /**
    * "Reload without aiming" (1.1.0, keyboard): a press of the keyboard's reload key (the second key of the mapping's

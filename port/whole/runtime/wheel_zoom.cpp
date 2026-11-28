@@ -51,6 +51,7 @@ extern "C" void re4_pad_zoom_probe(int (*probe)(void));     // runtime/pad.cpp
 extern "C" void re4_core_zoom(int notches);                 // below (runtime/re4_core.h)
 extern "C" int re4_wheel_zoom_view(void);                   // below
 extern "C" int re4_binocular_look(float yaw, float pitch);  // below (runtime/gyro.cpp)
+extern "C" int re4_quick_weapon_wheel(int notches);          // runtime/quick_weapon.cpp (1.1.7)
 
 namespace {
 
@@ -285,6 +286,10 @@ extern "C" void re4_core_zoom(int notches)
     if (!__atomic_exchange_n(&gHooked, true, __ATOMIC_ACQ_REL)) {
         re4_add_frame_hook(zoomHook);
         re4_log("wheel: the mouse wheel zooms the scope and the binoculars");
+    }
+    // (1.1.7) outside the scope and the binoculars the wheel goes through the case's weapons ("Quick weapon switch")
+    if (view() == 0 && re4_quick_weapon_wheel(notches)) {
+        return;
     }
     if (notches > 8) notches = 8;
     if (notches < -8) notches = -8;

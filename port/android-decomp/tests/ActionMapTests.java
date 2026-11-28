@@ -135,6 +135,19 @@ public final class ActionMapTests {
     check(ActionMap.available(ActionMap.KIND_KEYBOARD, ActionMap.C_UP)
         && !ActionMap.available(ActionMap.KIND_CONTROLLER, ActionMap.C_UP));
     check(ActionMap.PAGE.length == ActionMap.ACTIONS && ActionMap.PAGE[4] == ActionMap.C_UP);
+    // "Quick weapon switch" (1.1.7): "Next weapon" / "Previous weapon" for both kinds, without keys by default, no
+    // GameCube button; a key put on one is its single action (CoreInput.appFunctionOf)
+    for (int kind : new int[] {ActionMap.KIND_CONTROLLER, ActionMap.KIND_KEYBOARD}) {
+      ActionMap d = ActionMap.defaults(kind);
+      check(ActionMap.available(kind, ActionMap.NEXT_WEAPON) && ActionMap.available(kind, ActionMap.PREV_WEAPON));
+      check(d.keys(ActionMap.NEXT_WEAPON).length == 0 && d.keys(ActionMap.PREV_WEAPON).length == 0);
+      check(!ActionMap.combination(ActionMap.NEXT_WEAPON) && ActionMap.OUT[ActionMap.NEXT_WEAPON] == 0);
+    }
+    ActionMap qw = ActionMap.defaults(ActionMap.KIND_CONTROLLER)
+        .assign(ActionMap.NEXT_WEAPON, new int[] {CoreInput.KEYCODE_BUTTON_R1});
+    check(qw != null && qw.singleOn(CoreInput.KEYCODE_BUTTON_R1) == ActionMap.NEXT_WEAPON);
+    check(qw.keys(ActionMap.MAP).length == 0);  // the map's R1 went (a key does one single action)
+    check(ActionMap.decode(ActionMap.KIND_CONTROLLER, qw.encode()).equals(qw));
     // a mapping saved before 0.99.15 (no C stick in it): the C stick takes its default keys where they are free
     String old = "0=51;1=47;2=29;3=32;4=33;5=59;6=65538;7=65538+65537;8=65538+46;9=31;10=31+65537;11=45;12=61;13=41;"
         + "14=111;15=131";

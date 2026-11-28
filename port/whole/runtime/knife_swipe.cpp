@@ -36,6 +36,7 @@ extern cPlayer* pPL;
 extern "C" void re4_log(const char* fmt, ...);
 extern "C" void re4_add_frame_hook(void (*hook)(unsigned));
 extern "C" void re4_pad_add(unsigned short buttons);
+extern "C" int re4_quick_weapon_took_swipe(void);  // runtime/quick_weapon.cpp (1.1.7)
 
 namespace {
 
@@ -283,6 +284,10 @@ void knifeHook(unsigned)
 // thread.
 extern "C" void re4_core_slash(float tilt)
 {
+    // (1.1.7) a swipe on the life gauge switched the weapon ("Quick weapon switch"): no slash
+    if (re4_quick_weapon_took_swipe()) {
+        return;
+    }
     if (!gHooked) {
         gHooked = true;
         re4_add_frame_hook(knifeHook);

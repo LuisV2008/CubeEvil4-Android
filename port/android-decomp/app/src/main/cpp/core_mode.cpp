@@ -131,6 +131,7 @@ struct CoreApi {
   void (*setLeonJacket)(int){};   // optional (cores since 17.11.2026, 1.0): the cheat "Leon's jacket"
   void (*mouseMenu)(float, float, int){};  // optional (cores since 1.1.0): the mouse in the game's menus
   void (*quickReload)(void){};    // optional (cores since 1.1.0): one reload without the aim
+  int (*quickWeapon)(int, char *, int, int *){};  // optional (cores since 1.1.7): "Quick weapon switch"
   void (*photoMode)(int, int){};  // optional (cores since 1.1.0): photo mode
   void (*photoInput)(int, int, int){};
   int (*rtShadows)(void){};       // optional (cores since 16.11.2026): the real-time shadows the core knows
@@ -494,6 +495,7 @@ void loadCore(JNIEnv *env) {
   api.setLeonJacket = reinterpret_cast<void (*)(int)>(dlsym(api.main, "re4_core_set_leon_jacket"));
   api.mouseMenu = reinterpret_cast<void (*)(float, float, int)>(dlsym(api.main, "re4_core_mouse_menu"));
   api.quickReload = reinterpret_cast<void (*)(void)>(dlsym(api.main, "re4_core_quick_reload"));
+  api.quickWeapon = reinterpret_cast<int (*)(int, char *, int, int *)>(dlsym(api.main, "re4_core_quick_weapon"));
   api.photoMode = reinterpret_cast<void (*)(int, int)>(dlsym(api.main, "re4_core_photo_mode"));
   api.photoInput = reinterpret_cast<void (*)(int, int, int)>(dlsym(api.main, "re4_core_photo_input"));
   api.rtShadows = reinterpret_cast<int (*)(void)>(dlsym(api.main, "re4_core_rt_shadows"));
@@ -3521,6 +3523,7 @@ void useCoreProcess(const std::string &why) {
   api.setLeonJacket = re4ipc_set_leon_jacket;
   api.mouseMenu = re4ipc_mouse_menu;
   api.quickReload = re4ipc_quick_reload;
+  api.quickWeapon = re4ipc_quick_weapon;
   api.photoMode = re4ipc_photo_mode;
   api.photoInput = re4ipc_photo_input;
   api.rtShadows = re4ipc_rt_shadows;
@@ -4041,6 +4044,26 @@ extern "C" JNIEXPORT void JNICALL Java_com_ast_re4decomp_CoreBridge_mouseMenu(JN
 // "Reload without aiming" (1.1.0): the keyboard's reload key without the aim (runtime/aim_options.cpp, patch 0241).
 extern "C" JNIEXPORT void JNICALL Java_com_ast_re4decomp_CoreBridge_quickReload(JNIEnv *, jclass) {
   if (api.quickReload) api.quickReload();
+}
+
+// "Quick weapon switch" (1.1.7, runtime/quick_weapon.cpp): how 0x40000000 | on | grenades << 1 the menu's switches,
+// +1 / -1 the next / previous weapon of the case, 101..109 its 1st..9th (the keyboard's 1..9)
+extern "C" JNIEXPORT void JNICALL Java_com_ast_re4decomp_CoreBridge_quickWeapon(JNIEnv *, jclass, jint how) {
+  if (api.quickWeapon) api.quickWeapon(how, nullptr, 0, nullptr);
+}
+
+// The quick weapon switch's state for the app's label (CoreActivity): out[0] the switches done, out[1] the last one's
+// place, out[2] the count; out[3..6] the picture's box on the surface (x, y down, width, height, buffer pixels).
+// Returns the last weapon's name, null with a core without it.
+extern "C" JNIEXPORT jstring JNICALL Java_com_ast_re4decomp_CoreBridge_quickWeaponState(JNIEnv *env, jclass,
+                                                                                      jintArray out) {
+  if (!api.quickWeapon || !out || env->GetArrayLength(out) < 7) return nullptr;
+  char name[48] = {};
+  int info[2] = {0, 0};
+  const jint state[7] = {api.quickWeapon(0, name, sizeof(name), info), info[0], info[1], picX.load(), picY.load(),
+                         picW.load(), picH.load()};
+  env->SetIntArrayRegion(out, 0, 7, state);
+  return env->NewStringUTF(name);
 }
 
 // Photo mode (1.1.0, runtime/photo_mode.cpp): op 1 on with the mask, 0 off, 2 the mask; false: a core without it.

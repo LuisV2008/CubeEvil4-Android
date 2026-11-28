@@ -653,4 +653,9 @@
     <string name="ingame_lang_no_language">Non importé : le pack ne change aucun texte.</string>
     <string name="ingame_lang_bad_zip">Le fichier ZIP est illisible (endommagé, chiffré ou compressé autrement). Décompresse-le sur un PC et importe le dossier.</string>
     <string name="ingame_lang_read_failed">Le pack n’a pas pu être lu : %1$s</string>
+    <string name="ingame_quick_weapon">Changement d\'arme rapide</string>
+    <string name="ingame_quick_weapon_grenades">Grenades dans le cycle</string>
+    <string name="ingame_quick_weapon_help">Changement d\'arme rapide : changer d\'arme sans ouvrir la mallette, dans l\'ordre de la mallette (d\'en haut à gauche à en bas à droite) ; le couteau garde son propre bouton. Manette : croix gauche et droite (pas en visant ; le stick continue de marcher et de tourner) ou les touches attribuées à « Arme suivante » et « Arme précédente ». Clavier : 1 à 9 choisissent une arme, la molette de la souris les fait défiler (hors de la lunette). Tactile : toucher la jauge de vie ronde choisit l\'arme suivante ; glisser dessus vers la gauche la suivante, vers la droite la précédente. Grenades dans le cycle : les grenades aussi.</string>
+    <string name="ingame_act_next_weapon">Arme suivante</string>
+    <string name="ingame_act_prev_weapon">Arme précédente</string>
 </resources>

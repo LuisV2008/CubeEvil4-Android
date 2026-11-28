@@ -1019,6 +1019,37 @@ der Projektinhaber auf GitHub.
   `core-log` „GX: the GL driver is out of memory“ / „GX: GL error“, „run: sub screen open“, der Raum, die GX-Zeilen
   (Programme, Texturen) davor, „DVD: language pack … reads N files“, „cheat:“-Zeilen.
 
+### 4. Waffen-Schnellwechsel (Wunsch des Projektinhabers, OK 28.11.2026 „Ja, passt so“)
+
+- **Kern** (`runtime/quick_weapon.cpp`): die Waffen des Koffers in seiner Lesereihenfolge (`cItem::y`, dann `x`; nur
+  `board` 1), Tabelle der Waffen aus `wep_info` ohne Messer (0x38), leere Hände (0x800) und Eier; Granaten (0x01, 0x02,
+  0x0E) nur mit „Granaten mit durchschalten“. Der Wechsel ist der des Spiels nach dem Koffer (`SubScreenExit` Schritt 4:
+  `ItemMgr.arm`, `SndBlkStop(2)`, `weaponRelease`/`weaponLoad`/`weaponInit`, `bullet_type`) als Task (Priorität 2, wie
+  der Waffenwechsel des Debug-Werkzeugs), nur wo das Spiel den Koffer öffnen würde (`SubScreenCall`-Prüfungen,
+  `subScrCheck`), nicht als Ashley, nicht beim Zielen/Messer/eigenen Bewegungen, eins nach dem anderen.
+- **Eingaben:** Steuerkreuz links/rechts (neuer Filter in `pad.cpp` `re4_pad_button_filter`: bei eingeschaltetem
+  Wechsel und Spielen ohne Zielen nimmt er dem Spiel links/rechts, ein Druck ist ein Wechsel; beim Zielen bleiben sie
+  dem Spiel), Mausrad außerhalb von Zielfernrohr/Fernglas (`wheel_zoom.cpp`), Finger auf der Lebensanzeige (die
+  Zieh-Ereignisse aus `menu_touch.cpp`: Tippen = nächste, Wischen links = nächste, rechts = vorige; die rechte untere
+  Ecke des gezeigten Bildes, `picture.cpp re4_hud_corner_rows`; ein solches Wischen ist kein Messerhieb). App:
+  `re4_core_quick_weapon` (auch per IPC, `kQuickWeapon` 56), Tasten 1–9 (wenn die Belegung sie nicht nutzt),
+  belegbare Aktionen „Nächste Waffe“/„Vorige Waffe“ (`ActionMap` 20/21, ohne Taste), Anzeige `QuickWeaponLabel` über
+  der Lebensanzeige (englischer Name, Platz/Anzahl, 1,5 s), Menüzeile unter „Sanftere QTEs | Schnellfeuer“, 11 Sprachen.
+- **Geprüft am PC** (i686 und x86_64, Skripte `117-qw.sh`, `117-qw-all.sh`): jede Waffe gewechselt, gezielt und
+  geschossen (Pistolen, Red9, Punisher, Blacktail, Matilda, Broken Butterfly, Killer7, Handcannon, Schrotflinten,
+  Gewehre, TMP, Chicago Typewriter, Minenwerfer, Raketenwerfer, Bogen, drei Granaten); Ada, HUNK, Krauser, Wesker;
+  Mercenaries mit allen Figuren; mit Schnellfeuer, Lebensbalken und Bewegen und Zielen (Beine frisch eingerichtet);
+  Steuerkreuz, Anfragen, Tippen/Wischen auch beim Gehen. 0 Abstürze. Neue PC-Schalter `RE4_QUICK_WEAPON`,
+  `RE4_TEST_QUICK_WEAPON`, `RE4_TEST_QUICK_TOUCH`. Bilder `builds/workthread-1.1.7/quick-weapon`.
+- **Nicht auf einem Gerät geprüft:** wie lange Leon beim Laden der Waffendatei ohne Waffe ist; die Lage der Anzeige in
+  jedem Bildformat.
+
+### 5. „Input lag“ mit den EU-Discs (Infinix X6882): nicht echt
+
+Gleicher Spielcode für alle Discs (immer der des Debug-Builds), die EU-Schalter betreffen nur Texte, Menüs und
+Bildschirme; am PC (r100) reagieren Debug- und EU-Discs gleich (Zielen 1 Bild, Gehen 3 Bilder nach dem Druck, Skript
+`117-lag.sh`); in seinen Berichten wartet ein Druck mit EU nicht länger (16,4/13,7 ms gegen 16,9/25,1 ms).
+
 ## 1.1.6 (ab 26.11.2026, auf 1.1.5 = 219acfda)
 
 Version 1.1.6 (versionCode 130), Branch `workthread-116` (Worktree `RE4-wt116`, WSL `~/re4-wt116`), Releasetext

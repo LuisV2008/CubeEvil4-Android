@@ -651,4 +651,9 @@
     <string name="ingame_lang_no_language">Non importato: il pacchetto non cambia nessun testo.</string>
     <string name="ingame_lang_bad_zip">Il file ZIP non si può leggere (danneggiato, cifrato o compresso in un altro modo). Estrailo su un PC e importa la cartella.</string>
     <string name="ingame_lang_read_failed">Non è stato possibile leggere il pacchetto: %1$s</string>
+    <string name="ingame_quick_weapon">Cambio rapido dell\'arma</string>
+    <string name="ingame_quick_weapon_grenades">Granate nel ciclo</string>
+    <string name="ingame_quick_weapon_help">Cambio rapido dell\'arma: cambia arma senza aprire la valigetta, nell\'ordine della valigetta (dall\'alto a sinistra al basso a destra); il coltello mantiene il suo tasto. Controller: croce direzionale sinistra e destra (non mirando; lo stick continua a camminare e girare) o i tasti assegnati ad \"Arma successiva\" e \"Arma precedente\". Tastiera: da 1 a 9 scelgono un\'arma, la rotellina del mouse le scorre (fuori dal mirino). Touch: un tocco sull\'indicatore di vita rotondo sceglie l\'arma successiva, uno scorrimento verso sinistra la successiva, verso destra la precedente. Granate nel ciclo: anche le granate.</string>
+    <string name="ingame_act_next_weapon">Arma successiva</string>
+    <string name="ingame_act_prev_weapon">Arma precedente</string>
 </resources>

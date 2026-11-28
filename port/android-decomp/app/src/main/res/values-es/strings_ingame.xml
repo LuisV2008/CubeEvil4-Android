@@ -651,4 +651,9 @@
     <string name="ingame_lang_no_language">No importado: el paquete no cambia ningún texto.</string>
     <string name="ingame_lang_bad_zip">No se puede leer el archivo ZIP (dañado, cifrado o comprimido de otra forma). Descomprímelo en un PC e importa la carpeta.</string>
     <string name="ingame_lang_read_failed">No se pudo leer el paquete: %1$s</string>
+    <string name="ingame_quick_weapon">Cambio rápido de arma</string>
+    <string name="ingame_quick_weapon_grenades">Granadas en el ciclo</string>
+    <string name="ingame_quick_weapon_help">Cambio rápido de arma: cambia de arma sin abrir el maletín, en el orden del maletín (de arriba a la izquierda a abajo a la derecha); el cuchillo mantiene su propio botón. Mando: cruceta izquierda y derecha (no al apuntar; el stick sigue moviendo y girando) o las teclas que asignes a \"Arma siguiente\" y \"Arma anterior\". Teclado: del 1 al 9 eligen un arma, la rueda del ratón las recorre (fuera de la mira). Táctil: tocar el indicador de vida redondo elige la siguiente arma; deslizar sobre él hacia la izquierda la siguiente, hacia la derecha la anterior. Granadas en el ciclo: también las granadas.</string>
+    <string name="ingame_act_next_weapon">Arma siguiente</string>
+    <string name="ingame_act_prev_weapon">Arma anterior</string>
 </resources>

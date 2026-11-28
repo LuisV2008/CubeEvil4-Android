@@ -207,6 +207,17 @@ extern "C" void re4_core_set_hud_layout(int rows, int stretch_e4, int flags)
     gHudTop = top;
 }
 
+// (1.1.7, runtime/quick_weapon.cpp: a finger on the life gauge) the game's rows the screen shows, where the gauge lies in
+// their bottom right corner: the app's layout, else all 448; 1 with a layout
+extern "C" int re4_hud_corner_rows(int* top, int* bottom)
+{
+    const int t = gHudTop, b = gHudBottom;
+    const bool layout = t >= 0 && b > t;
+    *top = layout ? t : 0;
+    *bottom = layout ? b : 448;
+    return layout ? 1 : 0;
+}
+
 // game/id_sys.cpp (patch 0215): the screen matrix a unit is drawn with; IDSystem::m_scrn_mat, for the life gauge's
 // units moved into the corner (see above).
 extern "C" float (*re4_hud_scrn(const void* unit))[4]

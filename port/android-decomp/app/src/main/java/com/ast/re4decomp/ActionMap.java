@@ -28,18 +28,22 @@ public final class ActionMap {
       APP_MENU = 15,
       // the C stick on keys (0.99.15, GitHub #247: keyboard players could not zoom the scope by keys): keyboard only,
       // each tilts it fully that way; up zooms the scope and the binoculars in, down out, as on the GameCube
-      C_UP = 16, C_DOWN = 17, C_LEFT = 18, C_RIGHT = 19, ACTIONS = 20;
+      C_UP = 16, C_DOWN = 17, C_LEFT = 18, C_RIGHT = 19,
+      // "Quick weapon switch" (1.1.7): the case's next / previous weapon (the app's, no GameCube button; unset)
+      NEXT_WEAPON = 20, PREV_WEAPON = 21, ACTIONS = 22;
   /** The actions in the order of the page: the C stick after the moves. */
   public static final int[] PAGE = {MOVE_FORWARD, MOVE_BACK, MOVE_LEFT, MOVE_RIGHT, C_UP, C_DOWN, C_LEFT, C_RIGHT,
-      ACTION, RUN, AIM, FIRE, RELOAD, KNIFE, SLASH, ASHLEY, INVENTORY, MAP, OPTIONS, APP_MENU};
+      ACTION, RUN, AIM, FIRE, RELOAD, KNIFE, SLASH, ASHLEY, INVENTORY, MAP, OPTIONS, APP_MENU, NEXT_WEAPON,
+      PREV_WEAPON};
   public static final int KIND_CONTROLLER = 0, KIND_KEYBOARD = 1;
 
   /** The GameCube button of each action (the moves: the stick; the app's menu: none). */
   static final int[] OUT = {0, 0, 0, 0, CoreInput.GC_A, CoreInput.GC_B, CoreInput.GC_R, CoreInput.GC_A,
       CoreInput.GC_B, CoreInput.GC_L, CoreInput.GC_A, CoreInput.GC_X, CoreInput.GC_Y, CoreInput.GC_Z,
-      CoreInput.GC_START, 0, 0, 0, 0, 0};
+      CoreInput.GC_START, 0, 0, 0, 0, 0, 0, 0};
   /** The action a combination holds with its first key; -1: a single key. */
-  static final int[] HOLD = {-1, -1, -1, -1, -1, -1, -1, AIM, AIM, -1, KNIFE, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+  static final int[] HOLD = {-1, -1, -1, -1, -1, -1, -1, AIM, AIM, -1, KNIFE, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+      -1};
 
   // android.view.KeyEvent key codes
   static final int KEY_I = 37, KEY_J = 38, KEY_K = 39, KEY_L = 40;
@@ -272,7 +276,8 @@ public final class ActionMap {
   private boolean held(Held h, int action) { return keys[action].length == 1 && h.held(keys[action][0]); }
 
   static final String[] NAMES = {"forward", "back", "left", "right", "action", "run", "aim", "fire", "reload",
-      "knife", "slash", "Ashley", "inventory", "map", "options", "app menu", "C up", "C down", "C left", "C right"};
+      "knife", "slash", "Ashley", "inventory", "map", "options", "app menu", "C up", "C down", "C left", "C right",
+      "next weapon", "previous weapon"};
 
   /** For the log: "action = A, run = B, …, fire = R2+A" with the keys' names. */
   public String describe(java.util.function.IntFunction<String> keyName) {

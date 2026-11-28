@@ -652,4 +652,9 @@
     <string name="ingame_lang_no_language">Não importado: o pacote não muda nenhum texto.</string>
     <string name="ingame_lang_bad_zip">Não é possível ler o arquivo ZIP (danificado, criptografado ou compactado de outra forma). Descompacte-o em um PC e importe a pasta.</string>
     <string name="ingame_lang_read_failed">Não foi possível ler o pacote: %1$s</string>
+    <string name="ingame_quick_weapon">Troca rápida de arma</string>
+    <string name="ingame_quick_weapon_grenades">Granadas no ciclo</string>
+    <string name="ingame_quick_weapon_help">Troca rápida de arma: troque de arma sem abrir a maleta, na ordem da maleta (de cima à esquerda até embaixo à direita); a faca mantém seu próprio botão. Controle: direcional esquerda e direita (não ao mirar; o analógico continua andando e girando) ou as teclas atribuídas a \"Próxima arma\" e \"Arma anterior\". Teclado: 1 a 9 escolhem uma arma, a roda do mouse passa por elas (fora da mira). Toque: tocar no medidor de vida redondo escolhe a próxima arma; deslizar sobre ele para a esquerda a próxima, para a direita a anterior. Granadas no ciclo: as granadas também.</string>
+    <string name="ingame_act_next_weapon">Próxima arma</string>
+    <string name="ingame_act_prev_weapon">Arma anterior</string>
 </resources>
