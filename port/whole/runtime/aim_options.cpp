@@ -41,8 +41,7 @@ extern "C" void re4_add_frame_hook(void (*hook)(unsigned));  // runtime/pad.cpp
 extern "C" void re4_health_bars_set(int on);                 // runtime/health_bars.cpp (1.1.0)
 extern "C" void re4_stack_items_set(int step);               // runtime/cheats.cpp (1.1.0, patch 0254)
 extern "C" void re4_bloody_set(int on);                      // runtime/bloody.cpp (1.1.3, patch 0258)
-extern "C" void re4_rapid_fire_set(int on);
-extern "C" void re4_finisher_set(int on);  // runtime/finisher.cpp (1.1.7, patch 0264)                  // runtime/rapid_fire.cpp (1.1.6, patch 0263)
+extern "C" void re4_rapid_fire_set(int on);                  // runtime/rapid_fire.cpp (1.1.6, patch 0263)
 extern "C" void re4_merchant_all_set(int bits);              // runtime/cheats.cpp (1.1.3, patch 0259)
 
 namespace {
@@ -160,7 +159,7 @@ struct StartSetting {
             re4_stack_items_set((bits >> 21) & 3);
             re4_bloody_set((bits >> 23) & 1);
             re4_merchant_all_set((bits >> 6) & 3);
-            re4_rapid_fire_set((bits >> 30) & 1); re4_finisher_set((bits >> 31) & 1);
+            re4_rapid_fire_set((bits >> 30) & 1);
             gHooked = true;
             gPending = true;
             re4_add_frame_hook(hook);
@@ -210,7 +209,7 @@ extern "C" {
 // "Field of view" (degrees + 32; 0.98.4), bit 30 "Rapid fire" (1.1.6, runtime/rapid_fire.cpp, patch 0263). Any thread.
 void re4_aim_set(int bits)
 {
-    re4_rapid_fire_set((bits >> 30) & 1); re4_finisher_set((bits >> 31) & 1);
+    re4_rapid_fire_set((bits >> 30) & 1);
     re4_health_bars_set((bits >> 20) & 1);
     re4_stack_items_set((bits >> 21) & 3);
     re4_bloody_set((bits >> 23) & 1);
