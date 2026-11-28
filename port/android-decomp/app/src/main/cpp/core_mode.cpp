@@ -4053,16 +4053,24 @@ extern "C" JNIEXPORT void JNICALL Java_com_ast_re4decomp_CoreBridge_quickWeapon(
 }
 
 // The quick weapon switch's state for the app's label (CoreActivity): out[0] the switches done, out[1] the last one's
-// place, out[2] the count; out[3..6] the picture's box on the surface (x, y down, width, height, buffer pixels).
-// Returns the last weapon's name, null with a core without it.
+// place, out[2] the count; out[3..6] the picture's box on the surface (x, y down, width, height, buffer pixels);
+// out[7], out[8] the life gauge's left end and its lowest line on the surface (the label goes to its left on that
+// line; -1 when the core does not know it). Returns the last weapon's name, null with a core without it.
 extern "C" JNIEXPORT jstring JNICALL Java_com_ast_re4decomp_CoreBridge_quickWeaponState(JNIEnv *env, jclass,
                                                                                       jintArray out) {
-  if (!api.quickWeapon || !out || env->GetArrayLength(out) < 7) return nullptr;
+  if (!api.quickWeapon || !out || env->GetArrayLength(out) < 9) return nullptr;
   char name[48] = {};
-  int info[2] = {0, 0};
-  const jint state[7] = {api.quickWeapon(0, name, sizeof(name), info), info[0], info[1], picX.load(), picY.load(),
-                         picW.load(), picH.load()};
-  env->SetIntArrayRegion(out, 0, 7, state);
+  int info[4] = {0, 0, -1, -1};
+  const int serial = api.quickWeapon(0, name, sizeof(name), info);
+  const int x = picX.load(), y = picY.load(), w = picW.load(), h = picH.load();
+  const float top = picTop.load(), rows = picRows.load();
+  int gaugeLeft = -1, gaugeBottom = -1;
+  if (info[2] >= 0 && info[3] >= 0 && w > 0 && h > 0 && rows > 0.f) {
+    gaugeLeft = x + static_cast<int>(static_cast<float>(info[2]) / 10000.f * static_cast<float>(w) + 0.5f);
+    gaugeBottom = y + static_cast<int>((static_cast<float>(info[3]) / 4480.f - top) / rows * static_cast<float>(h) + 0.5f);
+  }
+  const jint state[9] = {serial, info[0], info[1], x, y, w, h, gaugeLeft, gaugeBottom};
+  env->SetIntArrayRegion(out, 0, 9, state);
   return env->NewStringUTF(name);
 }
 

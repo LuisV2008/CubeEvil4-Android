@@ -986,8 +986,8 @@ void serve()
             break;
         }
         case kQuickWeapon: {
-            unsigned char data[48] = {};
-            const int n = core.quickWeapon ? core.quickWeapon((int) h.a, (char*) data + 8, 40, (int*) data) : 0;
+            unsigned char data[56] = {};  // 4 ints (re4_core_quick_weapon's info) + the name
+            const int n = core.quickWeapon ? core.quickWeapon((int) h.a, (char*) data + 16, 40, (int*) data) : 0;
             reply(h.id, n, "", data, sizeof(data));
             break;
         }

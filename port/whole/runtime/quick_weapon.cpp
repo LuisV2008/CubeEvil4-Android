@@ -41,6 +41,7 @@ extern "C" void re4_add_frame_hook(void (*hook)(unsigned));          // runtime/
 extern "C" void re4_pad_button_filter(unsigned short (*f)(unsigned short));  // runtime/pad.cpp (1.1.7)
 extern "C" long re4_trace_free_at(void);                               // runtime/state_trace.cpp
 extern "C" int re4_hud_corner_rows(int* top, int* bottom);             // runtime/picture.cpp (1.1.7)
+extern "C" int re4_hud_gauge_box(int* left_e4, int* bottom_e1);       // runtime/picture.cpp (1.1.7)
 extern "C" void re4_quick_weapon_touch(int phase, float u, float v);   // below
 
 namespace {
@@ -196,8 +197,11 @@ void switchTask()
         gCount = gTargetCount;
         gSerial++;
         pthread_mutex_unlock(&gLock);
-        re4_log("quick weapon: %s (item 0x%02x, weapon %d type %d), %d of %d in the case at frame %u", w->name,
-                (unsigned) p->id, no, type, gTargetIndex, gTargetCount, (unsigned) pG->Frame_cnt);
+        int boxLeft = -1, boxBottom = -1;
+        re4_hud_gauge_box(&boxLeft, &boxBottom);
+        re4_log("quick weapon: %s (item 0x%02x, weapon %d type %d), %d of %d in the case at frame %u (the gauge from "
+                "%d/10000 across, its lowest row %d/10)", w->name, (unsigned) p->id, no, type, gTargetIndex,
+                gTargetCount, (unsigned) pG->Frame_cnt, boxLeft, boxBottom);
     }
     gTarget = 0;
     gBusy = 0;
@@ -382,8 +386,9 @@ extern "C" {
 
 // The app: how 0x40000000 | on | grenades << 1 the menu's switches; +1 / -1 the next / previous weapon; 100 + n the
 // case's n-th (the keyboard's 1..9); 0 asks only. The reply: the switches done so far (the app's label shows a new
-// one), the last one's weapon name into `name` (`size` bytes) and info[0] its place, info[1] the case's count.
-// Any thread.
+// one), the last one's weapon name into `name` (`size` bytes) and info[0] its place, info[1] the case's count; info[2]
+// and info[3] where the life gauge lies for the label to its left (its left end across the picture x 10000, its lowest
+// row of the game's 448 x 10; -1 without the app's layout). `info` holds 4. Any thread.
 int re4_core_quick_weapon(int how, char* name, int size, int* info)
 {
     if (how & 0x40000000) {
@@ -413,6 +418,9 @@ int re4_core_quick_weapon(int how, char* name, int size, int* info)
         info[1] = gCount;
     }
     pthread_mutex_unlock(&gLock);
+    if (info) {
+        re4_hud_gauge_box(&info[2], &info[3]);
+    }
     return (int) serial;
 }
 

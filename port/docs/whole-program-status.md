@@ -1041,6 +1041,16 @@ der Projektinhaber auf GitHub.
   Mercenaries mit allen Figuren; mit Schnellfeuer, Lebensbalken und Bewegen und Zielen (Beine frisch eingerichtet);
   Steuerkreuz, Anfragen, Tippen/Wischen auch beim Gehen. 0 Abstürze. Neue PC-Schalter `RE4_QUICK_WEAPON`,
   `RE4_TEST_QUICK_WEAPON`, `RE4_TEST_QUICK_TOUCH`. Bilder `builds/workthread-1.1.7/quick-weapon`.
+- **Anzeige links neben der Lebensanzeige** (Wunsch des Projektinhabers, OK 28.11.2026 „Ja, passt so“): unten auf der
+  unteren Linie der Lebens-/Munitionsanzeige, rechts mit 1,5 % der Bildhöhe Abstand zum Ring. Der Kern meldet, wo er den
+  Ring zeichnet (`picture.cpp re4_hud_gauge_box`, festgehalten in `re4_hud_scrn` beim Zeichnen, also auch breit/„Native“,
+  „Gestreckt“, „4:3 (GC)“ und mit Ashleys Ring; linker Rand des Rings 49 Einheiten links vom Anker, `kRingLeft`), über
+  `re4_core_quick_weapon` info[2]/info[3] (IPC-Antwort jetzt 56 Bytes); die App rechnet das in Bildschirmpunkte um
+  (`CoreBridge.quickWeaponState` out[7]/out[8]). Farbe die des Namens „Leon“, wie das Spiel ihn zeichnet (150, 150, 136,
+  in r100 und r205 gleich), Schrift fett kursiv mit Serifen, Größe 4,2 % der Bildhöhe, schwach dunkle Platte; weicht
+  gezeigten Touch-Tasten nach links aus (`TouchControls.shownControls`, `QuickWeaponLabel.avoid`). Am PC geprüft
+  (Skript `117-label.sh`: 16:9, 20:9, mit Ashley; gemeldete und gezeichnete Lage gleich), Bilder
+  `builds/workthread-1.1.7/quick-weapon/quick-weapon-label-left*.png`.
 - **Nicht auf einem Gerät geprüft:** wie lange Leon beim Laden der Waffendatei ohne Waffe ist; die Lage der Anzeige in
   jedem Bildformat.
 

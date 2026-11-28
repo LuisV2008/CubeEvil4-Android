@@ -559,7 +559,7 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
     fpsView.setTextDirection(View.TEXT_DIRECTION_LTR);
     root.addView(fpsView, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,
         FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM | Gravity.LEFT));
-    // "Quick weapon switch" (1.1.7): the new weapon's name above the life gauge (QuickWeaponLabel)
+    // "Quick weapon switch" (1.1.7): the new weapon's name to the left of the life gauge (QuickWeaponLabel)
     quickLabel = new QuickWeaponLabel(this);
     root.addView(quickLabel.view, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,
         FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.LEFT));
@@ -3394,7 +3394,7 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
   // "Quick weapon switch" (1.1.7, wish of the project owner, 28.11.2026; runtime/quick_weapon.cpp)
   private boolean quickWeapon;
   private QuickWeaponLabel quickLabel;
-  private final int[] quickState = new int[7];
+  private final int[] quickState = new int[9];
 
   /** The menu's switches to the core, and the label's watch on or off. */
   private void quickWeaponSend() {
@@ -3407,7 +3407,7 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
     if (quickWeapon) main.postDelayed(quickWatch, QuickWeaponLabel.POLL_MS);
   }
 
-  /** Every 100 ms while the switch is on: a new switch shows its weapon above the life gauge. */
+  /** Every 100 ms while the switch is on: a new switch shows its weapon next to the life gauge. */
   private final Runnable quickWatch = new Runnable() {
     @Override public void run() {
       if (!quickWeapon || quickLabel == null) return;
@@ -3416,8 +3416,11 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
         surface.getLocationInWindow(surfaceAt);
         float sx = outputW > 0 ? (float) surface.getWidth() / outputW : 1f;
         float sy = outputH > 0 ? (float) surface.getHeight() / outputH : 1f;
+        quickLabel.avoid(touchControls != null ? touchControls.shownControls() : null);
         quickLabel.update(quickState[0], name, quickState[1], quickState[2], surfaceAt[0] + quickState[3] * sx,
-            surfaceAt[1] + quickState[4] * sy, quickState[5] * sx, quickState[6] * sy);
+            surfaceAt[1] + quickState[4] * sy, quickState[5] * sx, quickState[6] * sy,
+            quickState[7] < 0 ? -1f : surfaceAt[0] + quickState[7] * sx,
+            quickState[8] < 0 ? -1f : surfaceAt[1] + quickState[8] * sy);
       }
       main.postDelayed(this, QuickWeaponLabel.POLL_MS);
     }
