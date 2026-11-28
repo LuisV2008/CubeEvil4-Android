@@ -673,5 +673,5 @@
     <string name="ingame_act_next_weapon">Next Weapon</string>
     <string name="ingame_act_prev_weapon">Previous Weapon</string>
     <string name="ingame_first_person">First person</string>
-    <string name="ingame_first_person_help">First person: the camera sits at Leon's eyes while you walk and aim. Experimental: the head may show or clip. Cutscenes are unchanged.</string>
+    <string name="ingame_first_person_help">First person: the camera sits at the eyes of Leon while you walk and aim. Experimental: the head may show or clip. Cutscenes are unchanged.</string>
 </resources>
