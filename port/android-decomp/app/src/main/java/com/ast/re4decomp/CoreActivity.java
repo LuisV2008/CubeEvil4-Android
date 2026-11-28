@@ -1738,6 +1738,9 @@ public final class CoreActivity extends Activity implements InputManager.InputDe
       if (down) capture();
     }
 
+    // the touch reload button (modification): reload without aiming
+    @Override public void reload() { CoreBridge.quickReload(); }
+
     // the touch zoom buttons (0.99.15, GitHub #247): a notch of the wheel at once and every ZOOM_REPEAT_MS while held
     @Override public void zoom(int direction, boolean down) {
       main.removeCallbacks(touchZoom);

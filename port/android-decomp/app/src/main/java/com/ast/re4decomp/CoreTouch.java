@@ -56,7 +56,9 @@ final class CoreTouch {
       // zoom in and out (0.99.15, GitHub #247: on touch the scope could only zoom by the look zone or a C stick):
       // buttons the editor adds, as the mouse wheel's notches while held (CoreBridge.zoom), the scope and the
       // binoculars only; not in the default layout
-      ZOOM_IN = "zoomin", ZOOM_OUT = "zoomout";
+      ZOOM_IN = "zoomin", ZOOM_OUT = "zoomout",
+      // reload without aiming (modification): a button the editor adds, not in the default layout
+      RELOAD = "reload";
   // the D-pad's directions (RetroTouchNavigation)
   static final String UP = "nav_up", DOWN = "nav_down", LEFT = "nav_left", RIGHT = "nav_right";
   /** This way of a looking finger (share of the screen's shorter side) tilts the C stick fully. */
@@ -69,9 +71,9 @@ final class CoreTouch {
    * adds it.
    */
   static final String[] ACTIONS = {A, B, X, Y, Z, L, R, START, MENU, R3, C_STICK, ZOOM_IN, ZOOM_OUT, AIM_STICK,
-      KNIFE_STICK};
+      KNIFE_STICK, RELOAD};
   static final String[] LABELS = {"A", "B", "X", "Y", "Z", "L", "R", "START", "MENU", "R3", "C", "+", "\u2212", "AIM",
-      "KNIFE"};
+      "KNIFE", "RECAR"};
   // the GameCube's official colours (the project owner's palette, 19.10.2026): A green, B red,
   // Z purple, the C stick yellow, the others grey (RetroTouch writes dark labels on the light grey
   // and the yellow)
@@ -80,7 +82,7 @@ final class CoreTouch {
   /** The border of every button (wish of the project owner, 03.11.2026). */
   static final int BORDER = 0xFF3E3C29;
   static final int[] COLOURS = {GC_GREEN, GC_RED, GC_GREY, GC_GREY, GC_PURPLE, GC_GREY, GC_GREY, GC_GREY, GC_GREY, GC_GREY,
-      GC_YELLOW, GC_GREY, GC_GREY, GC_GREY, GC_GREY};
+      GC_YELLOW, GC_GREY, GC_GREY, GC_GREY, GC_GREY, GC_GREY};
 
   /** Whether an action zooms (the editor's + and -), not a GameCube button. */
   static boolean isZoom(String action) {
@@ -148,6 +150,8 @@ final class CoreTouch {
     void r3(boolean down);
     /** A zoom button went down or up: 1 in, -1 out (the scope and the binoculars). */
     void zoom(int direction, boolean down);
+    /** The reload button was pressed: reload without aiming. */
+    default void reload() {}
   }
 
   private final CoreInput input;
@@ -224,6 +228,8 @@ final class CoreTouch {
       host.select(down);
     } else if (R3.equals(action)) {
       host.r3(down);
+    } else if (RELOAD.equals(action)) {
+      if (down) host.reload();
     } else if (isZoom(action)) {
       host.zoom(ZOOM_IN.equals(action) ? 1 : -1, down);
     } else if (latch && (L.equals(action) || R.equals(action))) {

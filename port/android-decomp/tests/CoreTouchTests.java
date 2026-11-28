@@ -543,7 +543,7 @@ public final class CoreTouchTests {
       check(!CoreTouch.LABELS[i].isEmpty() && CoreTouch.LABELS[i].length() <= 5);
       check(CoreTouch.label(a).equals(CoreTouch.LABELS[i]));
       boolean noButton = a.equals(CoreTouch.MENU) || a.equals(CoreTouch.R3) || CoreTouch.isStick(a)
-          || CoreTouch.isZoom(a);  // app / C stick / zoom actions
+          || CoreTouch.isZoom(a) || a.equals(CoreTouch.RELOAD);  // app / C stick / zoom / reload actions
       check(noButton ? CoreTouch.gcButton(a) == 0 : CoreTouch.gcButton(a) != 0);
     }
     Set<String> ids = new HashSet<>(), used = new HashSet<>();
@@ -570,6 +570,7 @@ public final class CoreTouchTests {
     placed.remove(CoreTouch.ZOOM_OUT);
     placed.remove(CoreTouch.AIM_STICK);
     placed.remove(CoreTouch.KNIFE_STICK);
+    placed.remove(CoreTouch.RELOAD);
     // (room for R3 and the two zoom buttons the editor adds, 0.99.15)
     check(used.equals(placed) && buttons + 3 <= 16 && sticks == 1 && looks == 1 && pads == 1);
     // one move stick in the default layout, room for one more stick the editor adds: the C stick, the aim stick or

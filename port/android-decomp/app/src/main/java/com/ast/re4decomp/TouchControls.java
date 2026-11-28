@@ -46,6 +46,7 @@ final class TouchControls implements CoreTouch.Host {
     void r3(boolean down);
     /** A zoom button (the editor's + or -) went down or up: 1 in, -1 out (CoreBridge.zoom while held). */
     void zoom(int direction, boolean down);
+    default void reload() {}
   }
 
   /** The key of the saved layout (RetroTouch keeps the player's layout under it). */
@@ -428,6 +429,7 @@ final class TouchControls implements CoreTouch.Host {
   @Override public void r3(boolean down) { host.r3(down); }
 
   @Override public void zoom(int direction, boolean down) { host.zoom(direction, down); }
+  @Override public void reload() { host.reload(); }
 
   /** Before the window's touch event goes to the views (CoreActivity.dispatchTouchEvent). */
   void before(MotionEvent e) {
